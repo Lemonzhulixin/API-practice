@@ -1,0 +1,4995 @@
+{
+  "collection": {
+    "info": {
+      "id": "cb659228-de94-1e55-e1e2-bff204f8ba4e",
+      "name": "API-Vivavideo CI-comment-50-for-APP",
+      "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+    },
+    "event": [],
+    "variable": [],
+    "item": [
+      {
+        "description": {
+          "content": "截止2017.03.29，每天最多只能评论50条；\n关注每天最多100个，没有去重；\n每个人关注数量最大为999；",
+          "type": "text/plain"
+        },
+        "_": {},
+        "id": "c7aa271b-a946-47cd-aa74-c107ba932920",
+        "name": "p-评论",
+        "item": [
+          {
+            "_": {},
+            "id": "8b9d81b9-e603-4c85-beee-c64532f1946d",
+            "name": "pa-获取视频评论",
+            "request": {
+              "url": "{{VivaVideoUrl_hz_p}}/pa",
+              "method": "POST",
+              "header": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "urlencoded",
+                "urlencoded": [
+                  {
+                    "key": "a",
+                    "value": "pa"
+                  },
+                  {
+                    "key": "b",
+                    "value": "1.0"
+                  },
+                  {
+                    "key": "c",
+                    "value": "{{Appkey}}"
+                  },
+                  {
+                    "key": "d",
+                    "value": "VivaVideo_QaTest_Tony"
+                  },
+                  {
+                    "key": "e",
+                    "value": "{{DeviceID}}"
+                  },
+                  {
+                    "disabled": true,
+                    "key": "f",
+                    "value": "{{VivaVideo_Auid}}"
+                  },
+                  {
+                    "key": "h",
+                    "value": "{{VivaVideo_UserToken}}"
+                  },
+                  {
+                    "key": "i",
+                    "value": "{\"a\":\"{{thirdPuid}}\",\"b\":\"1\"}"
+                  },
+                  {
+                    "key": "j",
+                    "value": "{{signRequest}}"
+                  },
+                  {
+                    "key": "k",
+                    "value": "{{OSVersion}}"
+                  },
+                  {
+                    "key": "l",
+                    "value": "{{CurrentTime}}"
+                  }
+                ]
+              },
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                    "",
+                    "if(responseCode.code === 200){",
+                    "    if(responseBody.length !== 0){",
+                    "        console.log(\"Response is： \" + responseBody);",
+                    "    }else{",
+                    "        console.log(\"The response is NULL!\");",
+                    "    }",
+                    "}else if(responseBody.has(\"errorCode\")){",
+                    "    //输出responseBody",
+                    "    console.log(responseBody);",
+                    "}"
+                  ]
+                }
+              },
+              {
+                "listen": "prerequest",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                    "var reqData = _.indexBy(request.data, \"key\"),",
+                    "    iContent = reqData[\"i\"].value;",
+                    "",
+                    "if(iContent.length !== 0){",
+                    "    var jsonContent=JSON.parse(iContent);",
+                    "",
+                    "    for (var a in jsonContent)",
+                    "    {",
+                    "        jsonContent[a]=String([jsonContent[a]]);",
+                    "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                    "        {",
+                    "            var y1=jsonContent[a].indexOf(\"}\");",
+                    "            var y2=jsonContent[a].substring(2,y1);",
+                    "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                    "        }",
+                    "    }",
+                    "        var strContentSign=JSON.stringify(jsonContent);",
+                    "}else{",
+                    "    var strContentSign = \"\";",
+                    "}",
+                    "",
+                    "var aPath = \"\";",
+                    "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                    "if(reqData[\"a\"].value.length === 1){",
+                    "    aPath = reqData[\"a\"].value;",
+                    "}else{",
+                    "    aPath = reqData[\"a\"].value.slice(0,1);",
+                    "}",
+                    "//拼接生成strPath字符串",
+                    "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                    "",
+                    "//生成request中i对应的sign值，用于服务器校验",
+                    "//var strContentSign = request.data[\"i\"];",
+                    "var strTime = globals.CurrentTime;",
+                    "",
+                    "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                    "//将Appkey值转成salt值，并Base64加密",
+                    "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                    "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                    "",
+                    "//拼接字符串，并MD5加密",
+                    "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                    "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                    "//console.log(md5StrJ);",
+                    "",
+                    "//将加密后的sign值设置到环境变量",
+                    "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "_": {},
+            "id": "13db3f4b-8464-4050-85a8-c07baa06e8e3",
+            "name": "pb-添加评论",
+            "request": {
+              "url": "{{VivaVideoUrl_hz_p}}/pb",
+              "method": "POST",
+              "header": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "urlencoded",
+                "urlencoded": [
+                  {
+                    "key": "a",
+                    "value": "pb"
+                  },
+                  {
+                    "key": "b",
+                    "value": "1.0"
+                  },
+                  {
+                    "key": "c",
+                    "value": "{{Appkey}}"
+                  },
+                  {
+                    "key": "d",
+                    "value": "VivaVideo_QaTest_Tony"
+                  },
+                  {
+                    "key": "e",
+                    "value": "{{DeviceID}}"
+                  },
+                  {
+                    "key": "f",
+                    "value": "{{VivaVideo_Auid}}"
+                  },
+                  {
+                    "key": "h",
+                    "value": "{{VivaVideo_UserToken}}"
+                  },
+                  {
+                    "key": "i",
+                    "value": "{\"a\":\"{{secPuid}}\",\"b\":\"1\",\"c\":\"{{VivaVideo_Auid}}\",\"d\":\"赞一个\"}"
+                  },
+                  {
+                    "key": "j",
+                    "value": "{{signRequest}}"
+                  },
+                  {
+                    "key": "k",
+                    "value": "{{OSVersion}}"
+                  },
+                  {
+                    "key": "l",
+                    "value": "{{CurrentTime}}"
+                  }
+                ]
+              },
+              "description": {
+                "content": "评论自己账号",
+                "type": "text/plain"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                    "",
+                    "if(responseCode.code === 200){",
+                    "    if(responseBody.length !== 0){",
+                    "        var jsonData = JSON.parse(responseBody);",
+                    "        //将发布的评论id设置到环境strCommentID中",
+                    "        postman.setEnvironmentVariable(\"strCommentID\", jsonData.commentId);",
+                    "        console.log(\"Response is： \" + responseBody);",
+                    "    }else{",
+                    "        console.log(\"The response is NULL!\");",
+                    "    }",
+                    "}else if(responseBody.has(\"errorCode\")){",
+                    "    //输出responseBody",
+                    "    console.log(responseBody);",
+                    "}"
+                  ]
+                }
+              },
+              {
+                "listen": "prerequest",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                    "var reqData = _.indexBy(request.data, \"key\"),",
+                    "    iContent = reqData[\"i\"].value;",
+                    "",
+                    "if(iContent.length !== 0){",
+                    "    var jsonContent=JSON.parse(iContent);",
+                    "",
+                    "    for (var a in jsonContent)",
+                    "    {",
+                    "        jsonContent[a]=String([jsonContent[a]]);",
+                    "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                    "        {",
+                    "            var y1=jsonContent[a].indexOf(\"}\");",
+                    "            var y2=jsonContent[a].substring(2,y1);",
+                    "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                    "        }",
+                    "    }",
+                    "        var strContentSign=JSON.stringify(jsonContent);",
+                    "}else{",
+                    "    var strContentSign = \"\";",
+                    "}",
+                    "",
+                    "var aPath = \"\";",
+                    "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                    "if(reqData[\"a\"].value.length === 1){",
+                    "    aPath = reqData[\"a\"].value;",
+                    "}else{",
+                    "    aPath = reqData[\"a\"].value.slice(0,1);",
+                    "}",
+                    "//拼接生成strPath字符串",
+                    "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                    "",
+                    "//生成request中i对应的sign值，用于服务器校验",
+                    "//var strContentSign = request.data[\"i\"];",
+                    "var strTime = globals.CurrentTime;",
+                    "",
+                    "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                    "//将Appkey值转成salt值，并Base64加密",
+                    "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                    "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                    "",
+                    "//拼接字符串，并MD5加密",
+                    "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                    "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                    "//console.log(md5StrJ);",
+                    "",
+                    "//将加密后的sign值设置到环境变量",
+                    "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "_": {},
+            "id": "f354aaa5-f06f-46af-a384-e53ffadbe65f",
+            "name": "pe-举报评论",
+            "request": {
+              "url": "{{VivaVideoUrl_hz_p}}/pe",
+              "method": "POST",
+              "header": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "urlencoded",
+                "urlencoded": [
+                  {
+                    "key": "a",
+                    "value": "pe"
+                  },
+                  {
+                    "key": "b",
+                    "value": "1.0"
+                  },
+                  {
+                    "key": "c",
+                    "value": "{{Appkey}}"
+                  },
+                  {
+                    "key": "d",
+                    "value": "VivaVideo_QaTest_Tony"
+                  },
+                  {
+                    "key": "e",
+                    "value": "{{DeviceID}}"
+                  },
+                  {
+                    "key": "f",
+                    "value": "{{VivaVideo_Auid}}"
+                  },
+                  {
+                    "key": "h",
+                    "value": "{{VivaVideo_UserToken}}"
+                  },
+                  {
+                    "key": "i",
+                    "value": "{\"a\":\"{{strCommentID}}\"}"
+                  },
+                  {
+                    "key": "j",
+                    "value": "{{signRequest}}"
+                  },
+                  {
+                    "key": "k",
+                    "value": "{{OSVersion}}"
+                  },
+                  {
+                    "key": "l",
+                    "value": "{{CurrentTime}}"
+                  }
+                ]
+              },
+              "description": {
+                "content": "评论自己账号",
+                "type": "text/plain"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                    "",
+                    "if(responseCode.code === 200){",
+                    "    if(responseBody.length !== 0){",
+                    "        var jsonData = JSON.parse(responseBody);",
+                    "        console.log(\"Response is： \" + responseBody);",
+                    "    }else{",
+                    "        console.log(\"The response is NULL!\");",
+                    "    }",
+                    "}else if(responseBody.has(\"errorCode\")){",
+                    "    //输出responseBody",
+                    "    console.log(responseBody);",
+                    "}"
+                  ]
+                }
+              },
+              {
+                "listen": "prerequest",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                    "var reqData = _.indexBy(request.data, \"key\"),",
+                    "    iContent = reqData[\"i\"].value;",
+                    "",
+                    "if(iContent.length !== 0){",
+                    "    var jsonContent=JSON.parse(iContent);",
+                    "",
+                    "    for (var a in jsonContent)",
+                    "    {",
+                    "        jsonContent[a]=String([jsonContent[a]]);",
+                    "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                    "        {",
+                    "            var y1=jsonContent[a].indexOf(\"}\");",
+                    "            var y2=jsonContent[a].substring(2,y1);",
+                    "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                    "        }",
+                    "    }",
+                    "        var strContentSign=JSON.stringify(jsonContent);",
+                    "}else{",
+                    "    var strContentSign = \"\";",
+                    "}",
+                    "",
+                    "var aPath = \"\";",
+                    "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                    "if(reqData[\"a\"].value.length === 1){",
+                    "    aPath = reqData[\"a\"].value;",
+                    "}else{",
+                    "    aPath = reqData[\"a\"].value.slice(0,1);",
+                    "}",
+                    "//拼接生成strPath字符串",
+                    "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                    "",
+                    "//生成request中i对应的sign值，用于服务器校验",
+                    "//var strContentSign = request.data[\"i\"];",
+                    "var strTime = globals.CurrentTime;",
+                    "",
+                    "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                    "//将Appkey值转成salt值，并Base64加密",
+                    "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                    "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                    "",
+                    "//拼接字符串，并MD5加密",
+                    "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                    "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                    "//console.log(md5StrJ);",
+                    "",
+                    "//将加密后的sign值设置到环境变量",
+                    "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "_": {},
+            "id": "61105b17-9be4-4209-a7f5-b9eaebd33cd4",
+            "name": "pf-评论点赞/取消点赞",
+            "request": {
+              "url": "{{VivaVideoUrl_hz_p}}/pf",
+              "method": "POST",
+              "header": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "urlencoded",
+                "urlencoded": [
+                  {
+                    "key": "a",
+                    "value": "pf"
+                  },
+                  {
+                    "key": "b",
+                    "value": "1.0"
+                  },
+                  {
+                    "key": "c",
+                    "value": "{{Appkey}}"
+                  },
+                  {
+                    "key": "d",
+                    "value": "VivaVideo_QaTest_Tony"
+                  },
+                  {
+                    "key": "e",
+                    "value": "{{DeviceID}}"
+                  },
+                  {
+                    "key": "f",
+                    "value": "{{VivaVideo_Auid}}"
+                  },
+                  {
+                    "key": "h",
+                    "value": "{{VivaVideo_UserToken}}"
+                  },
+                  {
+                    "key": "i",
+                    "value": "{\"a\":\"{{strCommentID}}\",\"b\":\"1\"}"
+                  },
+                  {
+                    "key": "j",
+                    "value": "{{signRequest}}"
+                  },
+                  {
+                    "key": "k",
+                    "value": "{{OSVersion}}"
+                  },
+                  {
+                    "key": "l",
+                    "value": "{{CurrentTime}}"
+                  }
+                ]
+              },
+              "description": {
+                "content": "评论自己账号\n业务参数说明：\nb：\n1：点赞\n0：取消点赞",
+                "type": "text/plain"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                    "",
+                    "if(responseCode.code === 200){",
+                    "    if(responseBody.length !== 0){",
+                    "        var jsonData = JSON.parse(responseBody);",
+                    "        console.log(\"Response is： \" + responseBody);",
+                    "    }else{",
+                    "        console.log(\"The response is NULL!\");",
+                    "    }",
+                    "}else if(responseBody.has(\"errorCode\")){",
+                    "    //输出responseBody",
+                    "    console.log(responseBody);",
+                    "}"
+                  ]
+                }
+              },
+              {
+                "listen": "prerequest",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                    "var reqData = _.indexBy(request.data, \"key\"),",
+                    "    iContent = reqData[\"i\"].value;",
+                    "",
+                    "if(iContent.length !== 0){",
+                    "    var jsonContent=JSON.parse(iContent);",
+                    "",
+                    "    for (var a in jsonContent)",
+                    "    {",
+                    "        jsonContent[a]=String([jsonContent[a]]);",
+                    "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                    "        {",
+                    "            var y1=jsonContent[a].indexOf(\"}\");",
+                    "            var y2=jsonContent[a].substring(2,y1);",
+                    "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                    "        }",
+                    "    }",
+                    "        var strContentSign=JSON.stringify(jsonContent);",
+                    "}else{",
+                    "    var strContentSign = \"\";",
+                    "}",
+                    "",
+                    "var aPath = \"\";",
+                    "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                    "if(reqData[\"a\"].value.length === 1){",
+                    "    aPath = reqData[\"a\"].value;",
+                    "}else{",
+                    "    aPath = reqData[\"a\"].value.slice(0,1);",
+                    "}",
+                    "//拼接生成strPath字符串",
+                    "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                    "",
+                    "//生成request中i对应的sign值，用于服务器校验",
+                    "//var strContentSign = request.data[\"i\"];",
+                    "var strTime = globals.CurrentTime;",
+                    "",
+                    "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                    "//将Appkey值转成salt值，并Base64加密",
+                    "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                    "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                    "",
+                    "//拼接字符串，并MD5加密",
+                    "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                    "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                    "//console.log(md5StrJ);",
+                    "",
+                    "//将加密后的sign值设置到环境变量",
+                    "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      },
+      {
+        "description": {
+          "content": "",
+          "type": "text/plain"
+        },
+        "_": {},
+        "id": "557bd1ca-1581-45d2-9944-a3773cfc9639",
+        "name": "pd-删除视频业务逻辑",
+        "item": [
+          {
+            "_": {},
+            "id": "20054ace-9ba4-4214-aa71-cbc3479c030f",
+            "name": "pc-回复评论",
+            "request": {
+              "url": "{{VivaVideoUrl_hz_p}}/pc",
+              "method": "POST",
+              "header": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "urlencoded",
+                "urlencoded": [
+                  {
+                    "key": "a",
+                    "value": "pc"
+                  },
+                  {
+                    "key": "b",
+                    "value": "1.0"
+                  },
+                  {
+                    "key": "c",
+                    "value": "{{Appkey}}"
+                  },
+                  {
+                    "key": "d",
+                    "value": "VivaVideo_QaTest_Tony"
+                  },
+                  {
+                    "key": "e",
+                    "value": "{{DeviceID}}"
+                  },
+                  {
+                    "key": "f",
+                    "value": "{{VivaVideo_Auid}}"
+                  },
+                  {
+                    "key": "h",
+                    "value": "{{VivaVideo_UserToken}}"
+                  },
+                  {
+                    "key": "i",
+                    "value": "{\"a\":\"{{strCommentID}}\",\"b\":\"{{secPuid}}\",\"c\":\"1\",\"d\":\"{{VivaVideo_Auid}}\",\"e\":\"再赞一个\"}"
+                  },
+                  {
+                    "key": "j",
+                    "value": "{{signRequest}}"
+                  },
+                  {
+                    "key": "k",
+                    "value": "{{OSVersion}}"
+                  },
+                  {
+                    "key": "l",
+                    "value": "{{CurrentTime}}"
+                  }
+                ]
+              },
+              "description": {
+                "content": "回复评论自己账号",
+                "type": "text/plain"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                    "",
+                    "if(responseCode.code === 200){",
+                    "    if(responseBody.length !== 0){",
+                    "        var jsonData = JSON.parse(responseBody);",
+                    "        //将回复的评论id设置到环境strCommentID中",
+                    "        postman.setEnvironmentVariable(\"strSecCommentID\", jsonData.commentId);",
+                    "        console.log(\"Response is： \" + responseBody);",
+                    "    }else{",
+                    "        console.log(\"The response is NULL!\");",
+                    "    }",
+                    "}else if(responseBody.has(\"errorCode\")){",
+                    "    //输出responseBody",
+                    "    console.log(responseBody);",
+                    "}"
+                  ]
+                }
+              },
+              {
+                "listen": "prerequest",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                    "var reqData = _.indexBy(request.data, \"key\"),",
+                    "    iContent = reqData[\"i\"].value;",
+                    "",
+                    "if(iContent.length !== 0){",
+                    "    var jsonContent=JSON.parse(iContent);",
+                    "",
+                    "    for (var a in jsonContent)",
+                    "    {",
+                    "        jsonContent[a]=String([jsonContent[a]]);",
+                    "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                    "        {",
+                    "            var y1=jsonContent[a].indexOf(\"}\");",
+                    "            var y2=jsonContent[a].substring(2,y1);",
+                    "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                    "        }",
+                    "    }",
+                    "        var strContentSign=JSON.stringify(jsonContent);",
+                    "}else{",
+                    "    var strContentSign = \"\";",
+                    "}",
+                    "",
+                    "var aPath = \"\";",
+                    "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                    "if(reqData[\"a\"].value.length === 1){",
+                    "    aPath = reqData[\"a\"].value;",
+                    "}else{",
+                    "    aPath = reqData[\"a\"].value.slice(0,1);",
+                    "}",
+                    "//拼接生成strPath字符串",
+                    "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                    "",
+                    "//生成request中i对应的sign值，用于服务器校验",
+                    "//var strContentSign = request.data[\"i\"];",
+                    "var strTime = globals.CurrentTime;",
+                    "",
+                    "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                    "//将Appkey值转成salt值，并Base64加密",
+                    "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                    "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                    "",
+                    "//拼接字符串，并MD5加密",
+                    "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                    "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                    "//console.log(md5StrJ);",
+                    "",
+                    "//将加密后的sign值设置到环境变量",
+                    "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "_": {},
+            "id": "f9173f0a-8b5b-49b8-a367-adf50663e3a8",
+            "name": "pd-删除回复的评论",
+            "request": {
+              "url": "{{VivaVideoUrl_hz_p}}/pd",
+              "method": "POST",
+              "header": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "urlencoded",
+                "urlencoded": [
+                  {
+                    "key": "a",
+                    "value": "pd"
+                  },
+                  {
+                    "key": "b",
+                    "value": "1.0"
+                  },
+                  {
+                    "key": "c",
+                    "value": "{{Appkey}}"
+                  },
+                  {
+                    "key": "d",
+                    "value": "VivaVideo_QaTest_Tony"
+                  },
+                  {
+                    "key": "e",
+                    "value": "{{DeviceID}}"
+                  },
+                  {
+                    "key": "f",
+                    "value": "{{VivaVideo_Auid}}"
+                  },
+                  {
+                    "key": "h",
+                    "value": "{{VivaVideo_UserToken}}"
+                  },
+                  {
+                    "key": "i",
+                    "value": "{\"a\":\"{{strSecCommentID}}\"}"
+                  },
+                  {
+                    "key": "j",
+                    "value": "{{signRequest}}"
+                  },
+                  {
+                    "key": "k",
+                    "value": "{{OSVersion}}"
+                  },
+                  {
+                    "key": "l",
+                    "value": "{{CurrentTime}}"
+                  }
+                ]
+              },
+              "description": {
+                "content": "删除对自己账号的回复评论",
+                "type": "text/plain"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                    "",
+                    "if(responseCode.code === 200){",
+                    "    if(responseBody.length !== 0){",
+                    "        var jsonData = JSON.parse(responseBody);",
+                    "        console.log(\"Response is： \" + responseBody);",
+                    "    }else{",
+                    "        console.log(\"The response is NULL!\");",
+                    "    }",
+                    "}else if(responseBody.has(\"errorCode\")){",
+                    "    //输出responseBody",
+                    "    console.log(responseBody);",
+                    "}"
+                  ]
+                }
+              },
+              {
+                "listen": "prerequest",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                    "var reqData = _.indexBy(request.data, \"key\"),",
+                    "    iContent = reqData[\"i\"].value;",
+                    "",
+                    "if(iContent.length !== 0){",
+                    "    var jsonContent=JSON.parse(iContent);",
+                    "",
+                    "    for (var a in jsonContent)",
+                    "    {",
+                    "        jsonContent[a]=String([jsonContent[a]]);",
+                    "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                    "        {",
+                    "            var y1=jsonContent[a].indexOf(\"}\");",
+                    "            var y2=jsonContent[a].substring(2,y1);",
+                    "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                    "        }",
+                    "    }",
+                    "        var strContentSign=JSON.stringify(jsonContent);",
+                    "}else{",
+                    "    var strContentSign = \"\";",
+                    "}",
+                    "",
+                    "var aPath = \"\";",
+                    "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                    "if(reqData[\"a\"].value.length === 1){",
+                    "    aPath = reqData[\"a\"].value;",
+                    "}else{",
+                    "    aPath = reqData[\"a\"].value.slice(0,1);",
+                    "}",
+                    "//拼接生成strPath字符串",
+                    "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                    "",
+                    "//生成request中i对应的sign值，用于服务器校验",
+                    "//var strContentSign = request.data[\"i\"];",
+                    "var strTime = globals.CurrentTime;",
+                    "",
+                    "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                    "//将Appkey值转成salt值，并Base64加密",
+                    "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                    "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                    "",
+                    "//拼接字符串，并MD5加密",
+                    "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                    "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                    "//console.log(md5StrJ);",
+                    "",
+                    "//将加密后的sign值设置到环境变量",
+                    "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "_": {},
+            "id": "e425c846-5eb4-4ec2-a2b0-545bd746bfe5",
+            "name": "pa-获取视频评论-检查评论是否删除",
+            "request": {
+              "url": "{{VivaVideoUrl_hz_p}}/pa",
+              "method": "POST",
+              "header": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Content-Type",
+                  "value": "application/x-www-form-urlencoded"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "urlencoded",
+                "urlencoded": [
+                  {
+                    "key": "a",
+                    "value": "pa"
+                  },
+                  {
+                    "key": "b",
+                    "value": "1.0"
+                  },
+                  {
+                    "key": "c",
+                    "value": "{{Appkey}}"
+                  },
+                  {
+                    "key": "d",
+                    "value": "VivaVideo_QaTest_Tony"
+                  },
+                  {
+                    "key": "e",
+                    "value": "{{DeviceID}}"
+                  },
+                  {
+                    "disabled": true,
+                    "key": "f",
+                    "value": "{{VivaVideo_Auid}}"
+                  },
+                  {
+                    "key": "h",
+                    "value": "{{VivaVideo_UserToken}}"
+                  },
+                  {
+                    "key": "i",
+                    "value": "{\"a\":\"{{secPuid}}\",\"b\":\"1\"}"
+                  },
+                  {
+                    "key": "j",
+                    "value": "{{signRequest}}"
+                  },
+                  {
+                    "key": "k",
+                    "value": "{{OSVersion}}"
+                  },
+                  {
+                    "key": "l",
+                    "value": "{{CurrentTime}}"
+                  }
+                ]
+              },
+              "description": {
+                "content": "检查自己的评论列表是否删除成功",
+                "type": "text/plain"
+              }
+            },
+            "response": [],
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                    "",
+                    "var sucFlag = 0;",
+                    "if(responseCode.code === 200){",
+                    "    if(responseBody.length !== 0){",
+                    "        var jsonData = JSON.parse(responseBody);",
+                    "        for(var i = 0; i < jsonData.comments.length; i++){",
+                    "            //判断此视频评论列表中是否包含已删除的回复评论",
+                    "            if(jsonData.comments[i].id === environment[\"strSecCommentID\"]){",
+                    "                //包含同名评论内容，设置sucFlag为1",
+                    "                sucFlag = 1;",
+                    "            }",
+                    "        }",
+                    "        //判断sucFlag当前数值，1代表删除失败，0代表删除成功",
+                    "        if(sucFlag === 1){",
+                    "            tests[\"删除评论成功\"] = false;",
+                    "            console.log(\"评论依然存在，删除失败\");",
+                    "        }else{",
+                    "            tests[\"删除评论成功\"] = true;",
+                    "        }",
+                    "    }else{",
+                    "        console.log(\"The response is NULL!\");",
+                    "    }",
+                    "}else if(responseBody.has(\"errorCode\")){",
+                    "    //输出responseBody",
+                    "    console.log(responseBody);",
+                    "}"
+                  ]
+                }
+              },
+              {
+                "listen": "prerequest",
+                "script": {
+                  "type": "text/javascript",
+                  "exec": [
+                    "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                    "var reqData = _.indexBy(request.data, \"key\"),",
+                    "    iContent = reqData[\"i\"].value;",
+                    "",
+                    "if(iContent.length !== 0){",
+                    "    var jsonContent=JSON.parse(iContent);",
+                    "",
+                    "    for (var a in jsonContent)",
+                    "    {",
+                    "        jsonContent[a]=String([jsonContent[a]]);",
+                    "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                    "        {",
+                    "            var y1=jsonContent[a].indexOf(\"}\");",
+                    "            var y2=jsonContent[a].substring(2,y1);",
+                    "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                    "        }",
+                    "    }",
+                    "        var strContentSign=JSON.stringify(jsonContent);",
+                    "}else{",
+                    "    var strContentSign = \"\";",
+                    "}",
+                    "",
+                    "var aPath = \"\";",
+                    "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                    "if(reqData[\"a\"].value.length === 1){",
+                    "    aPath = reqData[\"a\"].value;",
+                    "}else{",
+                    "    aPath = reqData[\"a\"].value.slice(0,1);",
+                    "}",
+                    "//拼接生成strPath字符串",
+                    "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                    "",
+                    "//生成request中i对应的sign值，用于服务器校验",
+                    "//var strContentSign = request.data[\"i\"];",
+                    "var strTime = globals.CurrentTime;",
+                    "",
+                    "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                    "//将Appkey值转成salt值，并Base64加密",
+                    "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                    "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                    "",
+                    "//拼接字符串，并MD5加密",
+                    "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                    "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                    "//console.log(md5StrJ);",
+                    "",
+                    "//将加密后的sign值设置到环境变量",
+                    "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "event": []
+      }
+    ]
+  },
+  "environment": {
+    "_": {
+      "postman_variable_scope": "environment",
+      "postman_exported_at": "2017-06-08T15:29:33.876Z",
+      "postman_exported_using": "Newman/3.5.2"
+    },
+    "id": "672d9187-69af-658f-242b-30e9d2f6a3c1",
+    "name": "Vivavideo01",
+    "values": [
+      {
+        "type": "any",
+        "value": "b7bf6f104a428ebf0151d4d825fffccd",
+        "key": "signRequest"
+      },
+      {
+        "type": "any",
+        "value": "10015700",
+        "key": "Appkey"
+      },
+      {
+        "type": "any",
+        "value": "20008700",
+        "key": "Appkey_iOS"
+      },
+      {
+        "type": "any",
+        "value": "4.4.4",
+        "key": "OSVersion"
+      },
+      {
+        "type": "any",
+        "value": "7vhzl",
+        "key": "VivaVideo_Auid"
+      },
+      {
+        "type": "any",
+        "value": "小小小小背影",
+        "key": "VivaVideo_nickName"
+      },
+      {
+        "type": "any",
+        "value": "F8C9897FF8E546503EF7E213DC5100BA",
+        "key": "VivaVideo_accountName"
+      },
+      {
+        "type": "any",
+        "value": "2|53c14e164ee37e3ab6b392a077f9de61a84fd78b173c5436b5418c17fc4a5b04",
+        "key": "VivaVideo_Token"
+      },
+      {
+        "type": "any",
+        "value": "2|53c14e164ee37e3a27649994e2dfb69ca84fd78b173c5436064d01aa52a9f9d6",
+        "key": "VivaVideo_UserToken"
+      },
+      {
+        "type": "any",
+        "value": "zh_CN",
+        "key": "languageConutry"
+      },
+      {
+        "type": "any",
+        "value": "CN",
+        "key": "country"
+      },
+      {
+        "type": "any",
+        "value": "161.22.60.66",
+        "key": "urlUrl"
+      },
+      {
+        "type": "any",
+        "value": "s6hv1",
+        "key": "VivaVideo_fristPuid"
+      },
+      {
+        "type": "any",
+        "value": "j84PT",
+        "key": "secPuid"
+      },
+      {
+        "type": "any",
+        "value": "v4TzT",
+        "key": "thirdPuid"
+      },
+      {
+        "type": "any",
+        "value": "I2k3U",
+        "key": "VivaVideo_thirdAuid"
+      },
+      {
+        "type": "any",
+        "value": "小魔术师陈俊强",
+        "key": "thirdNickName"
+      },
+      {
+        "type": "any",
+        "value": "y89fw",
+        "key": "vuid"
+      },
+      {
+        "type": "any",
+        "value": "ze7bfe",
+        "key": "ctuid"
+      },
+      {
+        "type": "any",
+        "value": "ze7bo9",
+        "key": "ptuid"
+      },
+      {
+        "type": "any",
+        "value": "hmhz",
+        "key": "strActivityID"
+      },
+      {
+        "type": "any",
+        "value": "快问快答",
+        "key": "strActivityTittle"
+      },
+      {
+        "type": "any",
+        "value": "0",
+        "key": "topUserModuleID"
+      },
+      {
+        "type": "any",
+        "value": "196627",
+        "key": "engineVersion"
+      },
+      {
+        "type": "any",
+        "value": "0x0100000000000099",
+        "key": "templateID"
+      },
+      {
+        "type": "any",
+        "value": "1",
+        "key": "templateTypeID"
+      },
+      {
+        "type": "any",
+        "value": "0",
+        "key": "sceneCodeID"
+      },
+      {
+        "type": "any",
+        "value": "2017052616283434",
+        "key": "templateGroupID"
+      },
+      {
+        "type": "any",
+        "value": "20160531095605",
+        "key": "templateRowCodeID"
+      },
+      {
+        "type": "any",
+        "value": "vfoId",
+        "key": "puid"
+      },
+      {
+        "type": "any",
+        "value": "1",
+        "key": "pversion"
+      },
+      {
+        "type": "any",
+        "value": "593943730cf21866e234b569",
+        "key": "strCommentID"
+      },
+      {
+        "type": "any",
+        "value": "z2ses",
+        "key": "VivaVideo_thirdAuid1"
+      },
+      {
+        "type": "any",
+        "value": "z0bU6",
+        "key": "VivaVideo_thirdAuid2"
+      },
+      {
+        "type": "any",
+        "value": "9r5Cf",
+        "key": "VivaVideo_thirdAuid3"
+      },
+      {
+        "type": "any",
+        "value": "59396da40cf2598a32784300",
+        "key": "strSecCommentID"
+      },
+      {
+        "type": "any",
+        "value": "9p0Nj3kvBQTk+xhZgxmCoRb+BSitSdl05n4hVzZXe8Y0SJIxO7RMfB4WRuHiiHdi+bksyBrYqqiI/lqUi19P5w==",
+        "key": "IMToken"
+      },
+      {
+        "type": "any",
+        "value": "DAqsraUj",
+        "key": "DeviceID"
+      }
+    ]
+  },
+  "globals": {
+    "_": {
+      "postman_variable_scope": "globals",
+      "postman_exported_at": "2017-06-08T15:29:33.876Z",
+      "postman_exported_using": "Newman/3.5.2"
+    },
+    "id": "48df2409-bb76-38de-94ea-4bea4cbcc2e4",
+    "name": "Postman Globals",
+    "values": [
+      {
+        "type": "any",
+        "value": "1496935663",
+        "key": "CurrentTime"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/a",
+        "key": "VivaVideoUrl_hz_a"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/u",
+        "key": "VivaVideoUrl_hz_u"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/v",
+        "key": "VivaVideoUrl_hz_v"
+      },
+      {
+        "type": "any",
+        "value": "https://s.api.xiaoying.co/api/rest/s",
+        "key": "VivaVideoUrl_hz_s"
+      },
+      {
+        "type": "any",
+        "value": "https://r.api.xiaoying.co/api/rest/r",
+        "key": "VivaVideoUrl_hz_r"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/m",
+        "key": "VivaVideoUrl_hz_m"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/p",
+        "key": "VivaVideoUrl_hz_p"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/g",
+        "key": "VivaVideoUrl_hz_g"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/search",
+        "key": "VivaVideoUrl_hz_search"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/h",
+        "key": "VivaVideoUrl_hz_h"
+      },
+      {
+        "type": "any",
+        "value": "https://s.api.xiaoying.co/api/rest/ad",
+        "key": "VivaVideoUrl_hz_ad"
+      },
+      {
+        "type": "any",
+        "value": "https://t.api.xiaoying.co/api/rest/t",
+        "key": "VivaVideoUrl_hz_t"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/y",
+        "key": "VivaVideoUrl_hz_y"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/d",
+        "key": "VivaVideoUrl_hz_d"
+      },
+      {
+        "type": "any",
+        "value": "https://push.api.xiaoying.co/api/rest/push",
+        "key": "VivaVideoUrl_hz_push"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co",
+        "key": "VivaVideoUrl_hz_live"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/a",
+        "key": "VivaVideoUrl_asia1_a"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/u",
+        "key": "VivaVideoUrl_asia1_u"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/v",
+        "key": "VivaVideoUrl_asia1_v"
+      },
+      {
+        "type": "any",
+        "value": "https://s.api.xiaoying.co/api/rest/s",
+        "key": "VivaVideoUrl_asia1_s"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/r",
+        "key": "VivaVideoUrl_asia1_r"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/m",
+        "key": "VivaVideoUrl_asia1_m"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/p",
+        "key": "VivaVideoUrl_asia1_p"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/g",
+        "key": "VivaVideoUrl_asia1_g"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/search",
+        "key": "VivaVideoUrl_asia1_search"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/h",
+        "key": "VivaVideoUrl_asia1_h"
+      },
+      {
+        "type": "any",
+        "value": "https://s.api.xiaoying.co/api/rest/ad",
+        "key": "VivaVideoUrl_asia1_ad"
+      },
+      {
+        "type": "any",
+        "value": "https://t.api.xiaoying.co/api/rest/t",
+        "key": "VivaVideoUrl_asia1_t"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/y",
+        "key": "VivaVideoUrl_asia1_y"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-asia1.api.xiaoying.co/api/rest/d",
+        "key": "VivaVideoUrl_asia1_d"
+      },
+      {
+        "type": "any",
+        "value": "https://push.api.xiaoying.co/api/rest/push",
+        "key": "VivaVideoUrl_asia1_push"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/a",
+        "key": "VivaVideoUrl_us_a"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/d",
+        "key": "VivaVideoUrl_us_d"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/u",
+        "key": "VivaVideoUrl_us_u"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/v",
+        "key": "VivaVideoUrl_us_v"
+      },
+      {
+        "type": "any",
+        "value": "https://s-ak.api.xiaoying.co/api/rest/s",
+        "key": "VivaVideoUrl_us_s"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/r",
+        "key": "VivaVideoUrl_us_r"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/m",
+        "key": "VivaVideoUrl_us_m"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/p",
+        "key": "VivaVideoUrl_us_p"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/g",
+        "key": "VivaVideoUrl_us_g"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/search",
+        "key": "VivaVideoUrl_us_search"
+      },
+      {
+        "type": "any",
+        "value": "https://viva.api.xiaoying.co/api/rest/h",
+        "key": "VivaVideoUrl_us_h"
+      },
+      {
+        "type": "any",
+        "value": "https://s-ak.api.xiaoying.co/api/rest/ad",
+        "key": "VivaVideoUrl_us_ad"
+      },
+      {
+        "type": "any",
+        "value": "https://t-ak.api.xiaoying.co/api/rest/t",
+        "key": "VivaVideoUrl_us_t"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us-ak.api.xiaoying.co/api/rest/y",
+        "key": "VivaVideoUrl_us_y"
+      },
+      {
+        "type": "any",
+        "value": "https://push.api.xiaoying.co/api/rest/push",
+        "key": "VivaVideoUrl_us_push"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-us.api.xiaoying.co",
+        "key": "VivaVideoUrl_us_live"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/a",
+        "key": "VivaVideoUrl_meast_a"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/u",
+        "key": "VivaVideoUrl_meast_u"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/v",
+        "key": "VivaVideoUrl_meast_v"
+      },
+      {
+        "type": "any",
+        "value": "https://s.api.xiaoying.co/api/rest/s",
+        "key": "VivaVideoUrl_meast_s"
+      },
+      {
+        "type": "any",
+        "value": "https://r.api.xiaoying.co/api/rest/r",
+        "key": "VivaVideoUrl_meast_r"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/m",
+        "key": "VivaVideoUrl_meast_m"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/p",
+        "key": "VivaVideoUrl_meast_p"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/g",
+        "key": "VivaVideoUrl_meast_g"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/search",
+        "key": "VivaVideoUrl_meast_search"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/h",
+        "key": "VivaVideoUrl_meast_h"
+      },
+      {
+        "type": "any",
+        "value": "https://s.api.xiaoying.co/api/rest/ad",
+        "key": "VivaVideoUrl_meast_ad"
+      },
+      {
+        "type": "any",
+        "value": "https://t.api.xiaoying.co/api/rest/t",
+        "key": "VivaVideoUrl_meast_t"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/y",
+        "key": "VivaVideoUrl_meast_y"
+      },
+      {
+        "type": "any",
+        "value": "https://viva-meast.api.xiaoying.co/api/rest/d",
+        "key": "VivaVideoUrl_meast_d"
+      },
+      {
+        "type": "any",
+        "value": "kamstar-common.api.xiaoying.co",
+        "key": "KamStar_common_url"
+      },
+      {
+        "type": "any",
+        "value": "kamstar.api.xiaoying.co",
+        "key": "KamStar_url"
+      },
+      {
+        "type": "any",
+        "value": "10004000",
+        "key": "Appkey"
+      },
+      {
+        "type": "any",
+        "value": "3506983623@qq.com",
+        "key": "account"
+      },
+      {
+        "type": "any",
+        "value": "Test123456",
+        "key": "password"
+      },
+      {
+        "type": "any",
+        "value": "en_OTHER",
+        "key": "Language"
+      },
+      {
+        "type": "any",
+        "value": "196615",
+        "key": "engineVersion"
+      },
+      {
+        "type": "any",
+        "value": "Attention: 返回数据结果错误，请联系相关人员!",
+        "key": "Result_is_false"
+      },
+      {
+        "type": "any",
+        "value": "Attention: No data, please check VCM!",
+        "key": "No_data"
+      },
+      {
+        "type": "any",
+        "value": "Warning: 接口请求失败，请联系相关人员!",
+        "key": "Request_failed"
+      },
+      {
+        "type": "any",
+        "value": "a16df6091fd3401b8380e7f92dc9497253ef99eec98e2cd6",
+        "key": "token"
+      },
+      {
+        "type": "any",
+        "value": "32847",
+        "key": "userid"
+      },
+      {
+        "type": "any",
+        "value": "rockie02",
+        "key": "accountName"
+      },
+      {
+        "type": "any",
+        "value": "422620",
+        "key": "deviceID"
+      },
+      {
+        "type": "any",
+        "value": "343360",
+        "key": "videoID"
+      },
+      {
+        "type": "any",
+        "value": "slideplus.api.xiaoying.co",
+        "key": "communityurl"
+      },
+      {
+        "type": "any",
+        "value": "slide-pre.api.xiaoying.co",
+        "key": "pre-communityurl"
+      },
+      {
+        "type": "any",
+        "value": "t-slide.api.xiaoying.co",
+        "key": "templateurl"
+      },
+      {
+        "type": "any",
+        "value": "t-slide-pre.api.xiaoying.co",
+        "key": "pre-templateurl"
+      },
+      {
+        "type": "any",
+        "value": "s-slide.api.xiaoying.co",
+        "key": "supporturl"
+      },
+      {
+        "type": "any",
+        "value": "s-slide-pre.api.xiaoying.co",
+        "key": "pre-supporturl"
+      },
+      {
+        "type": "any",
+        "value": "http://h5rs.api.xiaoying.co",
+        "key": "H5"
+      },
+      {
+        "type": "any",
+        "value": "20003500",
+        "key": "iAppkey"
+      },
+      {
+        "type": "any",
+        "value": "10004301",
+        "key": "gpAppkey"
+      },
+      {
+        "type": "any",
+        "value": "SlidePlus_QaTest_Lemon",
+        "key": "appSecret"
+      },
+      {
+        "type": "any",
+        "value": "[A]SlidePlus_QaTest_Lemon_Android",
+        "key": "AndroidFinger"
+      },
+      {
+        "type": "any",
+        "value": "[i]SlidePlus_QaTest_Lemon_iOS",
+        "key": "iOSFinger"
+      }
+    ]
+  },
+  "run": {
+    "stats": {
+      "iterations": {
+        "total": 1,
+        "pending": 0,
+        "failed": 0
+      },
+      "items": {
+        "total": 7,
+        "pending": 0,
+        "failed": 0
+      },
+      "scripts": {
+        "total": 14,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequests": {
+        "total": 7,
+        "pending": 0,
+        "failed": 0
+      },
+      "requests": {
+        "total": 7,
+        "pending": 0,
+        "failed": 0
+      },
+      "tests": {
+        "total": 7,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 8,
+        "pending": 0,
+        "failed": 1
+      },
+      "testScripts": {
+        "total": 7,
+        "pending": 0,
+        "failed": 0
+      },
+      "prerequestScripts": {
+        "total": 7,
+        "pending": 0,
+        "failed": 0
+      }
+    },
+    "timings": {
+      "responseAverage": 82.57142857142857,
+      "started": 1496935843521,
+      "completed": 1496935844388
+    },
+    "executions": [
+      {
+        "cursor": {
+          "position": 0,
+          "iteration": 0,
+          "length": 7,
+          "cycles": 1,
+          "empty": false,
+          "eof": false,
+          "bof": true,
+          "cr": false,
+          "ref": "7a52d336-1021-4505-954d-52010f66abb9"
+        },
+        "item": {
+          "_": {},
+          "id": "8b9d81b9-e603-4c85-beee-c64532f1946d",
+          "name": "pa-获取视频评论",
+          "request": {
+            "url": "{{VivaVideoUrl_hz_p}}/pa",
+            "method": "POST",
+            "header": [
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "pa"
+                },
+                {
+                  "key": "b",
+                  "value": "1.0"
+                },
+                {
+                  "key": "c",
+                  "value": "{{Appkey}}"
+                },
+                {
+                  "key": "d",
+                  "value": "VivaVideo_QaTest_Tony"
+                },
+                {
+                  "key": "e",
+                  "value": "{{DeviceID}}"
+                },
+                {
+                  "disabled": true,
+                  "key": "f",
+                  "value": "{{VivaVideo_Auid}}"
+                },
+                {
+                  "key": "h",
+                  "value": "{{VivaVideo_UserToken}}"
+                },
+                {
+                  "key": "i",
+                  "value": "{\"a\":\"{{thirdPuid}}\",\"b\":\"1\"}"
+                },
+                {
+                  "key": "j",
+                  "value": "{{signRequest}}"
+                },
+                {
+                  "key": "k",
+                  "value": "{{OSVersion}}"
+                },
+                {
+                  "key": "l",
+                  "value": "{{CurrentTime}}"
+                }
+              ]
+            },
+            "description": {
+              "content": "",
+              "type": "text/plain"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                  "",
+                  "if(responseCode.code === 200){",
+                  "    if(responseBody.length !== 0){",
+                  "        console.log(\"Response is： \" + responseBody);",
+                  "    }else{",
+                  "        console.log(\"The response is NULL!\");",
+                  "    }",
+                  "}else if(responseBody.has(\"errorCode\")){",
+                  "    //输出responseBody",
+                  "    console.log(responseBody);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                  "var reqData = _.indexBy(request.data, \"key\"),",
+                  "    iContent = reqData[\"i\"].value;",
+                  "",
+                  "if(iContent.length !== 0){",
+                  "    var jsonContent=JSON.parse(iContent);",
+                  "",
+                  "    for (var a in jsonContent)",
+                  "    {",
+                  "        jsonContent[a]=String([jsonContent[a]]);",
+                  "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                  "        {",
+                  "            var y1=jsonContent[a].indexOf(\"}\");",
+                  "            var y2=jsonContent[a].substring(2,y1);",
+                  "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                  "        }",
+                  "    }",
+                  "        var strContentSign=JSON.stringify(jsonContent);",
+                  "}else{",
+                  "    var strContentSign = \"\";",
+                  "}",
+                  "",
+                  "var aPath = \"\";",
+                  "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                  "if(reqData[\"a\"].value.length === 1){",
+                  "    aPath = reqData[\"a\"].value;",
+                  "}else{",
+                  "    aPath = reqData[\"a\"].value.slice(0,1);",
+                  "}",
+                  "//拼接生成strPath字符串",
+                  "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                  "",
+                  "//生成request中i对应的sign值，用于服务器校验",
+                  "//var strContentSign = request.data[\"i\"];",
+                  "var strTime = globals.CurrentTime;",
+                  "",
+                  "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                  "//将Appkey值转成salt值，并Base64加密",
+                  "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                  "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                  "",
+                  "//拼接字符串，并MD5加密",
+                  "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                  "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                  "//console.log(md5StrJ);",
+                  "",
+                  "//将加密后的sign值设置到环境变量",
+                  "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                ]
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": "https://viva.api.xiaoying.co/api/rest/p/pa",
+          "method": "POST",
+          "header": [
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Accept",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/5.0.0"
+            },
+            {
+              "key": "Host",
+              "value": "viva.api.xiaoying.co"
+            },
+            {
+              "key": "accept-encoding",
+              "value": "gzip, deflate"
+            },
+            {
+              "key": "content-length",
+              "value": 233
+            }
+          ],
+          "body": {
+            "mode": "urlencoded",
+            "urlencoded": [
+              {
+                "key": "a",
+                "value": "pa"
+              },
+              {
+                "key": "b",
+                "value": "1.0"
+              },
+              {
+                "key": "c",
+                "value": "10015700"
+              },
+              {
+                "key": "d",
+                "value": "VivaVideo_QaTest_Tony"
+              },
+              {
+                "key": "e",
+                "value": "DAqsraUj"
+              },
+              {
+                "disabled": true,
+                "key": "f",
+                "value": "7vhzl"
+              },
+              {
+                "key": "h",
+                "value": "2|53c14e164ee37e3a27649994e2dfb69ca84fd78b173c5436064d01aa52a9f9d6"
+              },
+              {
+                "key": "i",
+                "value": "{\"a\":\"v4TzT\",\"b\":\"1\"}"
+              },
+              {
+                "key": "j",
+                "value": "6740079b4b67421de4ceea6cd6cda20a"
+              },
+              {
+                "key": "k",
+                "value": "4.4.4"
+              },
+              {
+                "key": "l",
+                "value": "1496935663"
+              }
+            ]
+          },
+          "description": {
+            "content": "",
+            "type": "text/plain"
+          }
+        },
+        "response": {
+          "id": "c03213a0-e89c-42b1-990e-b80eb826f32c",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Tengine"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 08 Jun 2017 15:30:43 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=UTF-8"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=20"
+            },
+            {
+              "key": "Content-Encoding",
+              "value": "gzip"
+            }
+          ],
+          "body": "{\"comments\":[{\"content\":\"逗\",\"id\":\"59396d280cf2598a327842e1\",\"ip\":\"39.130.96.178\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608232840\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"q11or\",\"gender\":\"0\",\"nickName\":\"彝家阿娃\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170404160900/q11or/11/upload_avatar253.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"11111111\",\"id\":\"59396a220cf2598a3278424c\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231546\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"111111\",\"id\":\"59396a1e0cf21866e234bd63\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231542\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"111\",\"id\":\"59396a1a0cf2598a32784248\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231538\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"11\",\"id\":\"59396a150cf2598a32784246\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231533\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"5\",\"id\":\"59396a100cf2598a32784245\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231528\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"4\",\"id\":\"59396a0d0cf2598a32784244\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231525\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"3\",\"id\":\"59396a090cf21866e234bd5c\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231521\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"2\",\"id\":\"59396a060cf2598a32784241\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231518\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"},{\"content\":\"1\",\"id\":\"59396a020cf21866e234bd59\",\"ip\":\"123.150.222.28\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":0,\"publishTime\":\"20170608231514\",\"puidDigestVer\":\"v4TzT_1\",\"puiddigest\":\"v4TzT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"jCIwj\",\"gender\":\"0\",\"nickName\":\"幼儿园扛把子🔥_180\",\"profileImageUrl\":\"http://qzapp.qlogo.cn/qzapp/100368508/42CEF84173C0FAA0CFF47F81FDF46184/100\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"z2ses\"}],\"total\":82}",
+          "cookie": [],
+          "responseTime": 198,
+          "responseSize": 4492,
+          "update": {},
+          "_postman_requiresId": true,
+          "reason": {},
+          "text": {},
+          "json": {},
+          "mime": {},
+          "dataURI": {},
+          "size": {},
+          "encoding": {},
+          "describe": {},
+          "toObjectResolved": {},
+          "forEachParent": {},
+          "toJSON": {},
+          "meta": {},
+          "parent": {}
+        },
+        "id": "8b9d81b9-e603-4c85-beee-c64532f1946d",
+        "assertions": [
+          {
+            "assertion": "Status code is 200"
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "a7583467-f4c7-4ec5-b187-9d4b8463e74f",
+          "length": 7,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0
+        },
+        "item": {
+          "_": {},
+          "id": "13db3f4b-8464-4050-85a8-c07baa06e8e3",
+          "name": "pb-添加评论",
+          "request": {
+            "url": "{{VivaVideoUrl_hz_p}}/pb",
+            "method": "POST",
+            "header": [
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "pb"
+                },
+                {
+                  "key": "b",
+                  "value": "1.0"
+                },
+                {
+                  "key": "c",
+                  "value": "{{Appkey}}"
+                },
+                {
+                  "key": "d",
+                  "value": "VivaVideo_QaTest_Tony"
+                },
+                {
+                  "key": "e",
+                  "value": "{{DeviceID}}"
+                },
+                {
+                  "key": "f",
+                  "value": "{{VivaVideo_Auid}}"
+                },
+                {
+                  "key": "h",
+                  "value": "{{VivaVideo_UserToken}}"
+                },
+                {
+                  "key": "i",
+                  "value": "{\"a\":\"{{secPuid}}\",\"b\":\"1\",\"c\":\"{{VivaVideo_Auid}}\",\"d\":\"赞一个\"}"
+                },
+                {
+                  "key": "j",
+                  "value": "{{signRequest}}"
+                },
+                {
+                  "key": "k",
+                  "value": "{{OSVersion}}"
+                },
+                {
+                  "key": "l",
+                  "value": "{{CurrentTime}}"
+                }
+              ]
+            },
+            "description": {
+              "content": "评论自己账号",
+              "type": "text/plain"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                  "",
+                  "if(responseCode.code === 200){",
+                  "    if(responseBody.length !== 0){",
+                  "        var jsonData = JSON.parse(responseBody);",
+                  "        //将发布的评论id设置到环境strCommentID中",
+                  "        postman.setEnvironmentVariable(\"strCommentID\", jsonData.commentId);",
+                  "        console.log(\"Response is： \" + responseBody);",
+                  "    }else{",
+                  "        console.log(\"The response is NULL!\");",
+                  "    }",
+                  "}else if(responseBody.has(\"errorCode\")){",
+                  "    //输出responseBody",
+                  "    console.log(responseBody);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                  "var reqData = _.indexBy(request.data, \"key\"),",
+                  "    iContent = reqData[\"i\"].value;",
+                  "",
+                  "if(iContent.length !== 0){",
+                  "    var jsonContent=JSON.parse(iContent);",
+                  "",
+                  "    for (var a in jsonContent)",
+                  "    {",
+                  "        jsonContent[a]=String([jsonContent[a]]);",
+                  "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                  "        {",
+                  "            var y1=jsonContent[a].indexOf(\"}\");",
+                  "            var y2=jsonContent[a].substring(2,y1);",
+                  "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                  "        }",
+                  "    }",
+                  "        var strContentSign=JSON.stringify(jsonContent);",
+                  "}else{",
+                  "    var strContentSign = \"\";",
+                  "}",
+                  "",
+                  "var aPath = \"\";",
+                  "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                  "if(reqData[\"a\"].value.length === 1){",
+                  "    aPath = reqData[\"a\"].value;",
+                  "}else{",
+                  "    aPath = reqData[\"a\"].value.slice(0,1);",
+                  "}",
+                  "//拼接生成strPath字符串",
+                  "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                  "",
+                  "//生成request中i对应的sign值，用于服务器校验",
+                  "//var strContentSign = request.data[\"i\"];",
+                  "var strTime = globals.CurrentTime;",
+                  "",
+                  "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                  "//将Appkey值转成salt值，并Base64加密",
+                  "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                  "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                  "",
+                  "//拼接字符串，并MD5加密",
+                  "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                  "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                  "//console.log(md5StrJ);",
+                  "",
+                  "//将加密后的sign值设置到环境变量",
+                  "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                ]
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": "https://viva.api.xiaoying.co/api/rest/p/pb",
+          "method": "POST",
+          "header": [
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Accept",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/5.0.0"
+            },
+            {
+              "key": "Host",
+              "value": "viva.api.xiaoying.co"
+            },
+            {
+              "key": "accept-encoding",
+              "value": "gzip, deflate"
+            },
+            {
+              "key": "content-length",
+              "value": 311
+            }
+          ],
+          "body": {
+            "mode": "urlencoded",
+            "urlencoded": [
+              {
+                "key": "a",
+                "value": "pb"
+              },
+              {
+                "key": "b",
+                "value": "1.0"
+              },
+              {
+                "key": "c",
+                "value": "10015700"
+              },
+              {
+                "key": "d",
+                "value": "VivaVideo_QaTest_Tony"
+              },
+              {
+                "key": "e",
+                "value": "DAqsraUj"
+              },
+              {
+                "key": "f",
+                "value": "7vhzl"
+              },
+              {
+                "key": "h",
+                "value": "2|53c14e164ee37e3a27649994e2dfb69ca84fd78b173c5436064d01aa52a9f9d6"
+              },
+              {
+                "key": "i",
+                "value": "{\"a\":\"j84PT\",\"b\":\"1\",\"c\":\"7vhzl\",\"d\":\"赞一个\"}"
+              },
+              {
+                "key": "j",
+                "value": "73ae28373714888cde96fd8cbf003978"
+              },
+              {
+                "key": "k",
+                "value": "4.4.4"
+              },
+              {
+                "key": "l",
+                "value": "1496935663"
+              }
+            ]
+          },
+          "description": {
+            "content": "评论自己账号",
+            "type": "text/plain"
+          }
+        },
+        "response": {
+          "id": "3d0b1dce-02af-4c94-9222-0ff24edb0662",
+          "status": "Internal Server Error",
+          "code": 500,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Tengine"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 08 Jun 2017 15:30:43 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=UTF-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "19"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=20"
+            }
+          ],
+          "body": "{\"errorCode\":\"874\"}",
+          "cookie": [],
+          "responseTime": 52,
+          "responseSize": 19,
+          "update": {},
+          "_postman_requiresId": true,
+          "reason": {},
+          "text": {},
+          "json": {},
+          "mime": {},
+          "dataURI": {},
+          "size": {},
+          "encoding": {},
+          "describe": {},
+          "toObjectResolved": {},
+          "forEachParent": {},
+          "toJSON": {},
+          "meta": {},
+          "parent": {}
+        },
+        "id": "13db3f4b-8464-4050-85a8-c07baa06e8e3",
+        "assertions": [
+          {
+            "assertion": "Status code is 200",
+            "error": {
+              "name": "AssertionFailure",
+              "index": 0,
+              "message": "Status code is 200",
+              "stack": "AssertionFailure: Expected tests[\"Status code is 200\"] to be truth-like\n   at Object.eval test.js:1:2)"
+            }
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "2bda10e8-d89e-42f0-af0e-d0c5f05d70ab",
+          "length": 7,
+          "cycles": 1,
+          "position": 2,
+          "iteration": 0
+        },
+        "item": {
+          "_": {},
+          "id": "f354aaa5-f06f-46af-a384-e53ffadbe65f",
+          "name": "pe-举报评论",
+          "request": {
+            "url": "{{VivaVideoUrl_hz_p}}/pe",
+            "method": "POST",
+            "header": [
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "pe"
+                },
+                {
+                  "key": "b",
+                  "value": "1.0"
+                },
+                {
+                  "key": "c",
+                  "value": "{{Appkey}}"
+                },
+                {
+                  "key": "d",
+                  "value": "VivaVideo_QaTest_Tony"
+                },
+                {
+                  "key": "e",
+                  "value": "{{DeviceID}}"
+                },
+                {
+                  "key": "f",
+                  "value": "{{VivaVideo_Auid}}"
+                },
+                {
+                  "key": "h",
+                  "value": "{{VivaVideo_UserToken}}"
+                },
+                {
+                  "key": "i",
+                  "value": "{\"a\":\"{{strCommentID}}\"}"
+                },
+                {
+                  "key": "j",
+                  "value": "{{signRequest}}"
+                },
+                {
+                  "key": "k",
+                  "value": "{{OSVersion}}"
+                },
+                {
+                  "key": "l",
+                  "value": "{{CurrentTime}}"
+                }
+              ]
+            },
+            "description": {
+              "content": "评论自己账号",
+              "type": "text/plain"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                  "",
+                  "if(responseCode.code === 200){",
+                  "    if(responseBody.length !== 0){",
+                  "        var jsonData = JSON.parse(responseBody);",
+                  "        console.log(\"Response is： \" + responseBody);",
+                  "    }else{",
+                  "        console.log(\"The response is NULL!\");",
+                  "    }",
+                  "}else if(responseBody.has(\"errorCode\")){",
+                  "    //输出responseBody",
+                  "    console.log(responseBody);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                  "var reqData = _.indexBy(request.data, \"key\"),",
+                  "    iContent = reqData[\"i\"].value;",
+                  "",
+                  "if(iContent.length !== 0){",
+                  "    var jsonContent=JSON.parse(iContent);",
+                  "",
+                  "    for (var a in jsonContent)",
+                  "    {",
+                  "        jsonContent[a]=String([jsonContent[a]]);",
+                  "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                  "        {",
+                  "            var y1=jsonContent[a].indexOf(\"}\");",
+                  "            var y2=jsonContent[a].substring(2,y1);",
+                  "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                  "        }",
+                  "    }",
+                  "        var strContentSign=JSON.stringify(jsonContent);",
+                  "}else{",
+                  "    var strContentSign = \"\";",
+                  "}",
+                  "",
+                  "var aPath = \"\";",
+                  "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                  "if(reqData[\"a\"].value.length === 1){",
+                  "    aPath = reqData[\"a\"].value;",
+                  "}else{",
+                  "    aPath = reqData[\"a\"].value.slice(0,1);",
+                  "}",
+                  "//拼接生成strPath字符串",
+                  "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                  "",
+                  "//生成request中i对应的sign值，用于服务器校验",
+                  "//var strContentSign = request.data[\"i\"];",
+                  "var strTime = globals.CurrentTime;",
+                  "",
+                  "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                  "//将Appkey值转成salt值，并Base64加密",
+                  "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                  "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                  "",
+                  "//拼接字符串，并MD5加密",
+                  "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                  "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                  "//console.log(md5StrJ);",
+                  "",
+                  "//将加密后的sign值设置到环境变量",
+                  "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                ]
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": "https://viva.api.xiaoying.co/api/rest/p/pe",
+          "method": "POST",
+          "header": [
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Accept",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/5.0.0"
+            },
+            {
+              "key": "Host",
+              "value": "viva.api.xiaoying.co"
+            },
+            {
+              "key": "accept-encoding",
+              "value": "gzip, deflate"
+            },
+            {
+              "key": "content-length",
+              "value": 240
+            }
+          ],
+          "body": {
+            "mode": "urlencoded",
+            "urlencoded": [
+              {
+                "key": "a",
+                "value": "pe"
+              },
+              {
+                "key": "b",
+                "value": "1.0"
+              },
+              {
+                "key": "c",
+                "value": "10015700"
+              },
+              {
+                "key": "d",
+                "value": "VivaVideo_QaTest_Tony"
+              },
+              {
+                "key": "e",
+                "value": "DAqsraUj"
+              },
+              {
+                "key": "f",
+                "value": "7vhzl"
+              },
+              {
+                "key": "h",
+                "value": "2|53c14e164ee37e3a27649994e2dfb69ca84fd78b173c5436064d01aa52a9f9d6"
+              },
+              {
+                "key": "i",
+                "value": "{\"a\":\"593943730cf21866e234b569\"}"
+              },
+              {
+                "key": "j",
+                "value": "f29f76c9dd50822cf52e07ee32a3a072"
+              },
+              {
+                "key": "k",
+                "value": "4.4.4"
+              },
+              {
+                "key": "l",
+                "value": "1496935663"
+              }
+            ]
+          },
+          "description": {
+            "content": "评论自己账号",
+            "type": "text/plain"
+          }
+        },
+        "response": {
+          "id": "25c403e5-1a41-469f-983e-2471ebd65988",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Tengine"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 08 Jun 2017 15:30:44 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=UTF-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "0"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=20"
+            }
+          ],
+          "body": "",
+          "cookie": [],
+          "responseTime": 100,
+          "responseSize": 0,
+          "update": {},
+          "_postman_requiresId": true,
+          "reason": {},
+          "text": {},
+          "json": {},
+          "mime": {},
+          "dataURI": {},
+          "size": {},
+          "encoding": {},
+          "describe": {},
+          "toObjectResolved": {},
+          "forEachParent": {},
+          "toJSON": {},
+          "meta": {},
+          "parent": {}
+        },
+        "id": "f354aaa5-f06f-46af-a384-e53ffadbe65f",
+        "assertions": [
+          {
+            "assertion": "Status code is 200"
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "3dc712cc-35b3-4821-8b6e-e537c9a91546",
+          "length": 7,
+          "cycles": 1,
+          "position": 3,
+          "iteration": 0
+        },
+        "item": {
+          "_": {},
+          "id": "61105b17-9be4-4209-a7f5-b9eaebd33cd4",
+          "name": "pf-评论点赞/取消点赞",
+          "request": {
+            "url": "{{VivaVideoUrl_hz_p}}/pf",
+            "method": "POST",
+            "header": [
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "pf"
+                },
+                {
+                  "key": "b",
+                  "value": "1.0"
+                },
+                {
+                  "key": "c",
+                  "value": "{{Appkey}}"
+                },
+                {
+                  "key": "d",
+                  "value": "VivaVideo_QaTest_Tony"
+                },
+                {
+                  "key": "e",
+                  "value": "{{DeviceID}}"
+                },
+                {
+                  "key": "f",
+                  "value": "{{VivaVideo_Auid}}"
+                },
+                {
+                  "key": "h",
+                  "value": "{{VivaVideo_UserToken}}"
+                },
+                {
+                  "key": "i",
+                  "value": "{\"a\":\"{{strCommentID}}\",\"b\":\"1\"}"
+                },
+                {
+                  "key": "j",
+                  "value": "{{signRequest}}"
+                },
+                {
+                  "key": "k",
+                  "value": "{{OSVersion}}"
+                },
+                {
+                  "key": "l",
+                  "value": "{{CurrentTime}}"
+                }
+              ]
+            },
+            "description": {
+              "content": "评论自己账号\n业务参数说明：\nb：\n1：点赞\n0：取消点赞",
+              "type": "text/plain"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                  "",
+                  "if(responseCode.code === 200){",
+                  "    if(responseBody.length !== 0){",
+                  "        var jsonData = JSON.parse(responseBody);",
+                  "        console.log(\"Response is： \" + responseBody);",
+                  "    }else{",
+                  "        console.log(\"The response is NULL!\");",
+                  "    }",
+                  "}else if(responseBody.has(\"errorCode\")){",
+                  "    //输出responseBody",
+                  "    console.log(responseBody);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                  "var reqData = _.indexBy(request.data, \"key\"),",
+                  "    iContent = reqData[\"i\"].value;",
+                  "",
+                  "if(iContent.length !== 0){",
+                  "    var jsonContent=JSON.parse(iContent);",
+                  "",
+                  "    for (var a in jsonContent)",
+                  "    {",
+                  "        jsonContent[a]=String([jsonContent[a]]);",
+                  "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                  "        {",
+                  "            var y1=jsonContent[a].indexOf(\"}\");",
+                  "            var y2=jsonContent[a].substring(2,y1);",
+                  "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                  "        }",
+                  "    }",
+                  "        var strContentSign=JSON.stringify(jsonContent);",
+                  "}else{",
+                  "    var strContentSign = \"\";",
+                  "}",
+                  "",
+                  "var aPath = \"\";",
+                  "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                  "if(reqData[\"a\"].value.length === 1){",
+                  "    aPath = reqData[\"a\"].value;",
+                  "}else{",
+                  "    aPath = reqData[\"a\"].value.slice(0,1);",
+                  "}",
+                  "//拼接生成strPath字符串",
+                  "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                  "",
+                  "//生成request中i对应的sign值，用于服务器校验",
+                  "//var strContentSign = request.data[\"i\"];",
+                  "var strTime = globals.CurrentTime;",
+                  "",
+                  "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                  "//将Appkey值转成salt值，并Base64加密",
+                  "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                  "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                  "",
+                  "//拼接字符串，并MD5加密",
+                  "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                  "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                  "//console.log(md5StrJ);",
+                  "",
+                  "//将加密后的sign值设置到环境变量",
+                  "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                ]
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": "https://viva.api.xiaoying.co/api/rest/p/pf",
+          "method": "POST",
+          "header": [
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Accept",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/5.0.0"
+            },
+            {
+              "key": "Host",
+              "value": "viva.api.xiaoying.co"
+            },
+            {
+              "key": "accept-encoding",
+              "value": "gzip, deflate"
+            },
+            {
+              "key": "content-length",
+              "value": 260
+            }
+          ],
+          "body": {
+            "mode": "urlencoded",
+            "urlencoded": [
+              {
+                "key": "a",
+                "value": "pf"
+              },
+              {
+                "key": "b",
+                "value": "1.0"
+              },
+              {
+                "key": "c",
+                "value": "10015700"
+              },
+              {
+                "key": "d",
+                "value": "VivaVideo_QaTest_Tony"
+              },
+              {
+                "key": "e",
+                "value": "DAqsraUj"
+              },
+              {
+                "key": "f",
+                "value": "7vhzl"
+              },
+              {
+                "key": "h",
+                "value": "2|53c14e164ee37e3a27649994e2dfb69ca84fd78b173c5436064d01aa52a9f9d6"
+              },
+              {
+                "key": "i",
+                "value": "{\"a\":\"593943730cf21866e234b569\",\"b\":\"1\"}"
+              },
+              {
+                "key": "j",
+                "value": "09470e6078043f3d9bb3ae28da9abfeb"
+              },
+              {
+                "key": "k",
+                "value": "4.4.4"
+              },
+              {
+                "key": "l",
+                "value": "1496935663"
+              }
+            ]
+          },
+          "description": {
+            "content": "评论自己账号\n业务参数说明：\nb：\n1：点赞\n0：取消点赞",
+            "type": "text/plain"
+          }
+        },
+        "response": {
+          "id": "0e6b6798-e048-4224-98a0-2821b822a3e3",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Tengine"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 08 Jun 2017 15:30:44 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=UTF-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "68"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=20"
+            }
+          ],
+          "body": "{\"commentId\":\"593943730cf21866e234b569\",\"likeCount\":\"1\",\"liked\":\"1\"}",
+          "cookie": [],
+          "responseTime": 18,
+          "responseSize": 68,
+          "update": {},
+          "_postman_requiresId": true,
+          "reason": {},
+          "text": {},
+          "json": {},
+          "mime": {},
+          "dataURI": {},
+          "size": {},
+          "encoding": {},
+          "describe": {},
+          "toObjectResolved": {},
+          "forEachParent": {},
+          "toJSON": {},
+          "meta": {},
+          "parent": {}
+        },
+        "id": "61105b17-9be4-4209-a7f5-b9eaebd33cd4",
+        "assertions": [
+          {
+            "assertion": "Status code is 200"
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "29aeda15-d77d-4332-ad58-fb557bb75aa8",
+          "length": 7,
+          "cycles": 1,
+          "position": 4,
+          "iteration": 0
+        },
+        "item": {
+          "_": {},
+          "id": "20054ace-9ba4-4214-aa71-cbc3479c030f",
+          "name": "pc-回复评论",
+          "request": {
+            "url": "{{VivaVideoUrl_hz_p}}/pc",
+            "method": "POST",
+            "header": [
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "pc"
+                },
+                {
+                  "key": "b",
+                  "value": "1.0"
+                },
+                {
+                  "key": "c",
+                  "value": "{{Appkey}}"
+                },
+                {
+                  "key": "d",
+                  "value": "VivaVideo_QaTest_Tony"
+                },
+                {
+                  "key": "e",
+                  "value": "{{DeviceID}}"
+                },
+                {
+                  "key": "f",
+                  "value": "{{VivaVideo_Auid}}"
+                },
+                {
+                  "key": "h",
+                  "value": "{{VivaVideo_UserToken}}"
+                },
+                {
+                  "key": "i",
+                  "value": "{\"a\":\"{{strCommentID}}\",\"b\":\"{{secPuid}}\",\"c\":\"1\",\"d\":\"{{VivaVideo_Auid}}\",\"e\":\"再赞一个\"}"
+                },
+                {
+                  "key": "j",
+                  "value": "{{signRequest}}"
+                },
+                {
+                  "key": "k",
+                  "value": "{{OSVersion}}"
+                },
+                {
+                  "key": "l",
+                  "value": "{{CurrentTime}}"
+                }
+              ]
+            },
+            "description": {
+              "content": "回复评论自己账号",
+              "type": "text/plain"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                  "",
+                  "if(responseCode.code === 200){",
+                  "    if(responseBody.length !== 0){",
+                  "        var jsonData = JSON.parse(responseBody);",
+                  "        //将回复的评论id设置到环境strCommentID中",
+                  "        postman.setEnvironmentVariable(\"strSecCommentID\", jsonData.commentId);",
+                  "        console.log(\"Response is： \" + responseBody);",
+                  "    }else{",
+                  "        console.log(\"The response is NULL!\");",
+                  "    }",
+                  "}else if(responseBody.has(\"errorCode\")){",
+                  "    //输出responseBody",
+                  "    console.log(responseBody);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                  "var reqData = _.indexBy(request.data, \"key\"),",
+                  "    iContent = reqData[\"i\"].value;",
+                  "",
+                  "if(iContent.length !== 0){",
+                  "    var jsonContent=JSON.parse(iContent);",
+                  "",
+                  "    for (var a in jsonContent)",
+                  "    {",
+                  "        jsonContent[a]=String([jsonContent[a]]);",
+                  "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                  "        {",
+                  "            var y1=jsonContent[a].indexOf(\"}\");",
+                  "            var y2=jsonContent[a].substring(2,y1);",
+                  "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                  "        }",
+                  "    }",
+                  "        var strContentSign=JSON.stringify(jsonContent);",
+                  "}else{",
+                  "    var strContentSign = \"\";",
+                  "}",
+                  "",
+                  "var aPath = \"\";",
+                  "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                  "if(reqData[\"a\"].value.length === 1){",
+                  "    aPath = reqData[\"a\"].value;",
+                  "}else{",
+                  "    aPath = reqData[\"a\"].value.slice(0,1);",
+                  "}",
+                  "//拼接生成strPath字符串",
+                  "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                  "",
+                  "//生成request中i对应的sign值，用于服务器校验",
+                  "//var strContentSign = request.data[\"i\"];",
+                  "var strTime = globals.CurrentTime;",
+                  "",
+                  "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                  "//将Appkey值转成salt值，并Base64加密",
+                  "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                  "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                  "",
+                  "//拼接字符串，并MD5加密",
+                  "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                  "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                  "//console.log(md5StrJ);",
+                  "",
+                  "//将加密后的sign值设置到环境变量",
+                  "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                ]
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": "https://viva.api.xiaoying.co/api/rest/p/pc",
+          "method": "POST",
+          "header": [
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Accept",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/5.0.0"
+            },
+            {
+              "key": "Host",
+              "value": "viva.api.xiaoying.co"
+            },
+            {
+              "key": "accept-encoding",
+              "value": "gzip, deflate"
+            },
+            {
+              "key": "content-length",
+              "value": 363
+            }
+          ],
+          "body": {
+            "mode": "urlencoded",
+            "urlencoded": [
+              {
+                "key": "a",
+                "value": "pc"
+              },
+              {
+                "key": "b",
+                "value": "1.0"
+              },
+              {
+                "key": "c",
+                "value": "10015700"
+              },
+              {
+                "key": "d",
+                "value": "VivaVideo_QaTest_Tony"
+              },
+              {
+                "key": "e",
+                "value": "DAqsraUj"
+              },
+              {
+                "key": "f",
+                "value": "7vhzl"
+              },
+              {
+                "key": "h",
+                "value": "2|53c14e164ee37e3a27649994e2dfb69ca84fd78b173c5436064d01aa52a9f9d6"
+              },
+              {
+                "key": "i",
+                "value": "{\"a\":\"593943730cf21866e234b569\",\"b\":\"j84PT\",\"c\":\"1\",\"d\":\"7vhzl\",\"e\":\"再赞一个\"}"
+              },
+              {
+                "key": "j",
+                "value": "b49a5b31f640071585bdd1c2ede7f2b4"
+              },
+              {
+                "key": "k",
+                "value": "4.4.4"
+              },
+              {
+                "key": "l",
+                "value": "1496935663"
+              }
+            ]
+          },
+          "description": {
+            "content": "回复评论自己账号",
+            "type": "text/plain"
+          }
+        },
+        "response": {
+          "id": "e1691ffd-b003-4a10-a7aa-6fe3db677a0d",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Tengine"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 08 Jun 2017 15:30:44 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=UTF-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "40"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=20"
+            }
+          ],
+          "body": "{\"commentId\":\"59396da40cf2598a32784300\"}",
+          "cookie": [],
+          "responseTime": 97,
+          "responseSize": 40,
+          "update": {},
+          "_postman_requiresId": true,
+          "reason": {},
+          "text": {},
+          "json": {},
+          "mime": {},
+          "dataURI": {},
+          "size": {},
+          "encoding": {},
+          "describe": {},
+          "toObjectResolved": {},
+          "forEachParent": {},
+          "toJSON": {},
+          "meta": {},
+          "parent": {}
+        },
+        "id": "20054ace-9ba4-4214-aa71-cbc3479c030f",
+        "assertions": [
+          {
+            "assertion": "Status code is 200"
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "bedde073-fffe-4712-88c1-c7240e5593e1",
+          "length": 7,
+          "cycles": 1,
+          "position": 5,
+          "iteration": 0
+        },
+        "item": {
+          "_": {},
+          "id": "f9173f0a-8b5b-49b8-a367-adf50663e3a8",
+          "name": "pd-删除回复的评论",
+          "request": {
+            "url": "{{VivaVideoUrl_hz_p}}/pd",
+            "method": "POST",
+            "header": [
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "pd"
+                },
+                {
+                  "key": "b",
+                  "value": "1.0"
+                },
+                {
+                  "key": "c",
+                  "value": "{{Appkey}}"
+                },
+                {
+                  "key": "d",
+                  "value": "VivaVideo_QaTest_Tony"
+                },
+                {
+                  "key": "e",
+                  "value": "{{DeviceID}}"
+                },
+                {
+                  "key": "f",
+                  "value": "{{VivaVideo_Auid}}"
+                },
+                {
+                  "key": "h",
+                  "value": "{{VivaVideo_UserToken}}"
+                },
+                {
+                  "key": "i",
+                  "value": "{\"a\":\"{{strSecCommentID}}\"}"
+                },
+                {
+                  "key": "j",
+                  "value": "{{signRequest}}"
+                },
+                {
+                  "key": "k",
+                  "value": "{{OSVersion}}"
+                },
+                {
+                  "key": "l",
+                  "value": "{{CurrentTime}}"
+                }
+              ]
+            },
+            "description": {
+              "content": "删除对自己账号的回复评论",
+              "type": "text/plain"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                  "",
+                  "if(responseCode.code === 200){",
+                  "    if(responseBody.length !== 0){",
+                  "        var jsonData = JSON.parse(responseBody);",
+                  "        console.log(\"Response is： \" + responseBody);",
+                  "    }else{",
+                  "        console.log(\"The response is NULL!\");",
+                  "    }",
+                  "}else if(responseBody.has(\"errorCode\")){",
+                  "    //输出responseBody",
+                  "    console.log(responseBody);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                  "var reqData = _.indexBy(request.data, \"key\"),",
+                  "    iContent = reqData[\"i\"].value;",
+                  "",
+                  "if(iContent.length !== 0){",
+                  "    var jsonContent=JSON.parse(iContent);",
+                  "",
+                  "    for (var a in jsonContent)",
+                  "    {",
+                  "        jsonContent[a]=String([jsonContent[a]]);",
+                  "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                  "        {",
+                  "            var y1=jsonContent[a].indexOf(\"}\");",
+                  "            var y2=jsonContent[a].substring(2,y1);",
+                  "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                  "        }",
+                  "    }",
+                  "        var strContentSign=JSON.stringify(jsonContent);",
+                  "}else{",
+                  "    var strContentSign = \"\";",
+                  "}",
+                  "",
+                  "var aPath = \"\";",
+                  "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                  "if(reqData[\"a\"].value.length === 1){",
+                  "    aPath = reqData[\"a\"].value;",
+                  "}else{",
+                  "    aPath = reqData[\"a\"].value.slice(0,1);",
+                  "}",
+                  "//拼接生成strPath字符串",
+                  "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                  "",
+                  "//生成request中i对应的sign值，用于服务器校验",
+                  "//var strContentSign = request.data[\"i\"];",
+                  "var strTime = globals.CurrentTime;",
+                  "",
+                  "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                  "//将Appkey值转成salt值，并Base64加密",
+                  "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                  "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                  "",
+                  "//拼接字符串，并MD5加密",
+                  "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                  "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                  "//console.log(md5StrJ);",
+                  "",
+                  "//将加密后的sign值设置到环境变量",
+                  "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                ]
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": "https://viva.api.xiaoying.co/api/rest/p/pd",
+          "method": "POST",
+          "header": [
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Accept",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/5.0.0"
+            },
+            {
+              "key": "Host",
+              "value": "viva.api.xiaoying.co"
+            },
+            {
+              "key": "accept-encoding",
+              "value": "gzip, deflate"
+            },
+            {
+              "key": "content-length",
+              "value": 240
+            }
+          ],
+          "body": {
+            "mode": "urlencoded",
+            "urlencoded": [
+              {
+                "key": "a",
+                "value": "pd"
+              },
+              {
+                "key": "b",
+                "value": "1.0"
+              },
+              {
+                "key": "c",
+                "value": "10015700"
+              },
+              {
+                "key": "d",
+                "value": "VivaVideo_QaTest_Tony"
+              },
+              {
+                "key": "e",
+                "value": "DAqsraUj"
+              },
+              {
+                "key": "f",
+                "value": "7vhzl"
+              },
+              {
+                "key": "h",
+                "value": "2|53c14e164ee37e3a27649994e2dfb69ca84fd78b173c5436064d01aa52a9f9d6"
+              },
+              {
+                "key": "i",
+                "value": "{\"a\":\"59396da40cf2598a32784300\"}"
+              },
+              {
+                "key": "j",
+                "value": "4d0c0fe2b6f7a92be12e450761cec6ba"
+              },
+              {
+                "key": "k",
+                "value": "4.4.4"
+              },
+              {
+                "key": "l",
+                "value": "1496935663"
+              }
+            ]
+          },
+          "description": {
+            "content": "删除对自己账号的回复评论",
+            "type": "text/plain"
+          }
+        },
+        "response": {
+          "id": "d686dc94-a133-4f71-ac93-0f9387adb8b5",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Tengine"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 08 Jun 2017 15:30:44 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=UTF-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "0"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=20"
+            }
+          ],
+          "body": "",
+          "cookie": [],
+          "responseTime": 75,
+          "responseSize": 0,
+          "update": {},
+          "_postman_requiresId": true,
+          "reason": {},
+          "text": {},
+          "json": {},
+          "mime": {},
+          "dataURI": {},
+          "size": {},
+          "encoding": {},
+          "describe": {},
+          "toObjectResolved": {},
+          "forEachParent": {},
+          "toJSON": {},
+          "meta": {},
+          "parent": {}
+        },
+        "id": "f9173f0a-8b5b-49b8-a367-adf50663e3a8",
+        "assertions": [
+          {
+            "assertion": "Status code is 200"
+          }
+        ]
+      },
+      {
+        "cursor": {
+          "ref": "5dbbb36f-0a8d-44f3-bd05-247e3d14ded0",
+          "length": 7,
+          "cycles": 1,
+          "position": 6,
+          "iteration": 0
+        },
+        "item": {
+          "_": {},
+          "id": "e425c846-5eb4-4ec2-a2b0-545bd746bfe5",
+          "name": "pa-获取视频评论-检查评论是否删除",
+          "request": {
+            "url": "{{VivaVideoUrl_hz_p}}/pa",
+            "method": "POST",
+            "header": [
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "pa"
+                },
+                {
+                  "key": "b",
+                  "value": "1.0"
+                },
+                {
+                  "key": "c",
+                  "value": "{{Appkey}}"
+                },
+                {
+                  "key": "d",
+                  "value": "VivaVideo_QaTest_Tony"
+                },
+                {
+                  "key": "e",
+                  "value": "{{DeviceID}}"
+                },
+                {
+                  "disabled": true,
+                  "key": "f",
+                  "value": "{{VivaVideo_Auid}}"
+                },
+                {
+                  "key": "h",
+                  "value": "{{VivaVideo_UserToken}}"
+                },
+                {
+                  "key": "i",
+                  "value": "{\"a\":\"{{secPuid}}\",\"b\":\"1\"}"
+                },
+                {
+                  "key": "j",
+                  "value": "{{signRequest}}"
+                },
+                {
+                  "key": "k",
+                  "value": "{{OSVersion}}"
+                },
+                {
+                  "key": "l",
+                  "value": "{{CurrentTime}}"
+                }
+              ]
+            },
+            "description": {
+              "content": "检查自己的评论列表是否删除成功",
+              "type": "text/plain"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                  "",
+                  "var sucFlag = 0;",
+                  "if(responseCode.code === 200){",
+                  "    if(responseBody.length !== 0){",
+                  "        var jsonData = JSON.parse(responseBody);",
+                  "        for(var i = 0; i < jsonData.comments.length; i++){",
+                  "            //判断此视频评论列表中是否包含已删除的回复评论",
+                  "            if(jsonData.comments[i].id === environment[\"strSecCommentID\"]){",
+                  "                //包含同名评论内容，设置sucFlag为1",
+                  "                sucFlag = 1;",
+                  "            }",
+                  "        }",
+                  "        //判断sucFlag当前数值，1代表删除失败，0代表删除成功",
+                  "        if(sucFlag === 1){",
+                  "            tests[\"删除评论成功\"] = false;",
+                  "            console.log(\"评论依然存在，删除失败\");",
+                  "        }else{",
+                  "            tests[\"删除评论成功\"] = true;",
+                  "        }",
+                  "    }else{",
+                  "        console.log(\"The response is NULL!\");",
+                  "    }",
+                  "}else if(responseBody.has(\"errorCode\")){",
+                  "    //输出responseBody",
+                  "    console.log(responseBody);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                  "var reqData = _.indexBy(request.data, \"key\"),",
+                  "    iContent = reqData[\"i\"].value;",
+                  "",
+                  "if(iContent.length !== 0){",
+                  "    var jsonContent=JSON.parse(iContent);",
+                  "",
+                  "    for (var a in jsonContent)",
+                  "    {",
+                  "        jsonContent[a]=String([jsonContent[a]]);",
+                  "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                  "        {",
+                  "            var y1=jsonContent[a].indexOf(\"}\");",
+                  "            var y2=jsonContent[a].substring(2,y1);",
+                  "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                  "        }",
+                  "    }",
+                  "        var strContentSign=JSON.stringify(jsonContent);",
+                  "}else{",
+                  "    var strContentSign = \"\";",
+                  "}",
+                  "",
+                  "var aPath = \"\";",
+                  "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                  "if(reqData[\"a\"].value.length === 1){",
+                  "    aPath = reqData[\"a\"].value;",
+                  "}else{",
+                  "    aPath = reqData[\"a\"].value.slice(0,1);",
+                  "}",
+                  "//拼接生成strPath字符串",
+                  "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                  "",
+                  "//生成request中i对应的sign值，用于服务器校验",
+                  "//var strContentSign = request.data[\"i\"];",
+                  "var strTime = globals.CurrentTime;",
+                  "",
+                  "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                  "//将Appkey值转成salt值，并Base64加密",
+                  "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                  "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                  "",
+                  "//拼接字符串，并MD5加密",
+                  "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                  "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                  "//console.log(md5StrJ);",
+                  "",
+                  "//将加密后的sign值设置到环境变量",
+                  "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                ]
+              }
+            }
+          ]
+        },
+        "request": {
+          "url": "https://viva.api.xiaoying.co/api/rest/p/pa",
+          "method": "POST",
+          "header": [
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Content-Type",
+              "value": "application/x-www-form-urlencoded"
+            },
+            {
+              "description": {
+                "content": "",
+                "type": "text/plain"
+              },
+              "key": "Accept",
+              "value": "application/json"
+            },
+            {
+              "key": "User-Agent",
+              "value": "PostmanRuntime/5.0.0"
+            },
+            {
+              "key": "Host",
+              "value": "viva.api.xiaoying.co"
+            },
+            {
+              "key": "accept-encoding",
+              "value": "gzip, deflate"
+            },
+            {
+              "key": "content-length",
+              "value": 233
+            }
+          ],
+          "body": {
+            "mode": "urlencoded",
+            "urlencoded": [
+              {
+                "key": "a",
+                "value": "pa"
+              },
+              {
+                "key": "b",
+                "value": "1.0"
+              },
+              {
+                "key": "c",
+                "value": "10015700"
+              },
+              {
+                "key": "d",
+                "value": "VivaVideo_QaTest_Tony"
+              },
+              {
+                "key": "e",
+                "value": "DAqsraUj"
+              },
+              {
+                "disabled": true,
+                "key": "f",
+                "value": "7vhzl"
+              },
+              {
+                "key": "h",
+                "value": "2|53c14e164ee37e3a27649994e2dfb69ca84fd78b173c5436064d01aa52a9f9d6"
+              },
+              {
+                "key": "i",
+                "value": "{\"a\":\"j84PT\",\"b\":\"1\"}"
+              },
+              {
+                "key": "j",
+                "value": "b7bf6f104a428ebf0151d4d825fffccd"
+              },
+              {
+                "key": "k",
+                "value": "4.4.4"
+              },
+              {
+                "key": "l",
+                "value": "1496935663"
+              }
+            ]
+          },
+          "description": {
+            "content": "检查自己的评论列表是否删除成功",
+            "type": "text/plain"
+          }
+        },
+        "response": {
+          "id": "ec7dd5bb-2eb5-4db4-8540-1f67037b3448",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Server",
+              "value": "Tengine"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 08 Jun 2017 15:30:44 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json;charset=UTF-8"
+            },
+            {
+              "key": "Transfer-Encoding",
+              "value": "chunked"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=20"
+            },
+            {
+              "key": "Content-Encoding",
+              "value": "gzip"
+            }
+          ],
+          "body": "{\"comments\":[{\"content\":\"赞一个\",\"id\":\"593963170cf21866e234bbff\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608224543\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"593958c70cf2598a32783ea9\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608220143\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"59394dff0cf2598a32783c86\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608211543\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"593943730cf21866e234b569\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608203043\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"593938e70cf2598a327838b2\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608194543\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"59392e960cf21866e234b16d\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608190142\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"593923ce0cf21866e234af0e\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608181542\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"593919420cf2598a327832ac\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608173042\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"59390eb60cf21866e234ab10\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608164542\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"},{\"content\":\"赞一个\",\"id\":\"593904860cf2598a32782fff\",\"ip\":\"121.52.226.236\",\"isHot\":0,\"isLiked\":0,\"isTop\":0,\"liked\":1,\"publishTime\":\"20170608160214\",\"puidDigestVer\":\"j84PT_1\",\"puiddigest\":\"j84PT\",\"replyUser\":{},\"reportcount\":0,\"user\":{\"auid\":\"7vhzl\",\"gender\":\"0\",\"nickName\":\"小小小小背影\",\"profileImageUrl\":\"http://img4d.xiaoying.tv/20170517110615/7vhzl/11/logo739.jpg\",\"studiograde\":\"0\"},\"ver\":\"1\",\"videoAuiddigest\":\"7vhzl\"}],\"total\":224}",
+          "cookie": [],
+          "responseTime": 38,
+          "responseSize": 4356,
+          "update": {},
+          "_postman_requiresId": true,
+          "reason": {},
+          "text": {},
+          "json": {},
+          "mime": {},
+          "dataURI": {},
+          "size": {},
+          "encoding": {},
+          "describe": {},
+          "toObjectResolved": {},
+          "forEachParent": {},
+          "toJSON": {},
+          "meta": {},
+          "parent": {}
+        },
+        "id": "e425c846-5eb4-4ec2-a2b0-545bd746bfe5",
+        "assertions": [
+          {
+            "assertion": "Status code is 200"
+          },
+          {
+            "assertion": "删除评论成功"
+          }
+        ]
+      }
+    ],
+    "transfers": {
+      "responseTotal": 8975
+    },
+    "failures": [
+      {
+        "error": {
+          "name": "AssertionFailure",
+          "index": 0,
+          "message": "Status code is 200",
+          "stack": "AssertionFailure: Expected tests[\"Status code is 200\"] to be truth-like\n   at Object.eval test.js:1:2)",
+          "checksum": "aa912fef47aec348a19e45c1973e3bc6",
+          "id": "90378950-d369-4780-b3f7-e030bee2d39e",
+          "timestamp": 1496935843909,
+          "stacktrace": [
+            {
+              "fileName": "test.js",
+              "lineNumber": 1,
+              "functionName": "Object.eval",
+              "typeName": "Object",
+              "methodName": "eval",
+              "columnNumber": 2,
+              "native": false
+            }
+          ]
+        },
+        "at": "assertion:1 in test-script",
+        "source": {
+          "_": {},
+          "id": "13db3f4b-8464-4050-85a8-c07baa06e8e3",
+          "name": "pb-添加评论",
+          "request": {
+            "url": "{{VivaVideoUrl_hz_p}}/pb",
+            "method": "POST",
+            "header": [
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                },
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "a",
+                  "value": "pb"
+                },
+                {
+                  "key": "b",
+                  "value": "1.0"
+                },
+                {
+                  "key": "c",
+                  "value": "{{Appkey}}"
+                },
+                {
+                  "key": "d",
+                  "value": "VivaVideo_QaTest_Tony"
+                },
+                {
+                  "key": "e",
+                  "value": "{{DeviceID}}"
+                },
+                {
+                  "key": "f",
+                  "value": "{{VivaVideo_Auid}}"
+                },
+                {
+                  "key": "h",
+                  "value": "{{VivaVideo_UserToken}}"
+                },
+                {
+                  "key": "i",
+                  "value": "{\"a\":\"{{secPuid}}\",\"b\":\"1\",\"c\":\"{{VivaVideo_Auid}}\",\"d\":\"赞一个\"}"
+                },
+                {
+                  "key": "j",
+                  "value": "{{signRequest}}"
+                },
+                {
+                  "key": "k",
+                  "value": "{{OSVersion}}"
+                },
+                {
+                  "key": "l",
+                  "value": "{{CurrentTime}}"
+                }
+              ]
+            },
+            "description": {
+              "content": "评论自己账号",
+              "type": "text/plain"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                  "",
+                  "if(responseCode.code === 200){",
+                  "    if(responseBody.length !== 0){",
+                  "        var jsonData = JSON.parse(responseBody);",
+                  "        //将发布的评论id设置到环境strCommentID中",
+                  "        postman.setEnvironmentVariable(\"strCommentID\", jsonData.commentId);",
+                  "        console.log(\"Response is： \" + responseBody);",
+                  "    }else{",
+                  "        console.log(\"The response is NULL!\");",
+                  "    }",
+                  "}else if(responseBody.has(\"errorCode\")){",
+                  "    //输出responseBody",
+                  "    console.log(responseBody);",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                  "var reqData = _.indexBy(request.data, \"key\"),",
+                  "    iContent = reqData[\"i\"].value;",
+                  "",
+                  "if(iContent.length !== 0){",
+                  "    var jsonContent=JSON.parse(iContent);",
+                  "",
+                  "    for (var a in jsonContent)",
+                  "    {",
+                  "        jsonContent[a]=String([jsonContent[a]]);",
+                  "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                  "        {",
+                  "            var y1=jsonContent[a].indexOf(\"}\");",
+                  "            var y2=jsonContent[a].substring(2,y1);",
+                  "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                  "        }",
+                  "    }",
+                  "        var strContentSign=JSON.stringify(jsonContent);",
+                  "}else{",
+                  "    var strContentSign = \"\";",
+                  "}",
+                  "",
+                  "var aPath = \"\";",
+                  "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                  "if(reqData[\"a\"].value.length === 1){",
+                  "    aPath = reqData[\"a\"].value;",
+                  "}else{",
+                  "    aPath = reqData[\"a\"].value.slice(0,1);",
+                  "}",
+                  "//拼接生成strPath字符串",
+                  "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                  "",
+                  "//生成request中i对应的sign值，用于服务器校验",
+                  "//var strContentSign = request.data[\"i\"];",
+                  "var strTime = globals.CurrentTime;",
+                  "",
+                  "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                  "//将Appkey值转成salt值，并Base64加密",
+                  "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                  "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                  "",
+                  "//拼接字符串，并MD5加密",
+                  "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                  "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                  "//console.log(md5StrJ);",
+                  "",
+                  "//将加密后的sign值设置到环境变量",
+                  "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                ]
+              }
+            }
+          ]
+        },
+        "parent": {
+          "description": {
+            "content": "截止2017.03.29，每天最多只能评论50条；\n关注每天最多100个，没有去重；\n每个人关注数量最大为999；",
+            "type": "text/plain"
+          },
+          "_": {},
+          "id": "c7aa271b-a946-47cd-aa74-c107ba932920",
+          "name": "p-评论",
+          "item": [
+            {
+              "_": {},
+              "id": "8b9d81b9-e603-4c85-beee-c64532f1946d",
+              "name": "pa-获取视频评论",
+              "request": {
+                "url": "{{VivaVideoUrl_hz_p}}/pa",
+                "method": "POST",
+                "header": [
+                  {
+                    "description": {
+                      "content": "",
+                      "type": "text/plain"
+                    },
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "description": {
+                      "content": "",
+                      "type": "text/plain"
+                    },
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "a",
+                      "value": "pa"
+                    },
+                    {
+                      "key": "b",
+                      "value": "1.0"
+                    },
+                    {
+                      "key": "c",
+                      "value": "{{Appkey}}"
+                    },
+                    {
+                      "key": "d",
+                      "value": "VivaVideo_QaTest_Tony"
+                    },
+                    {
+                      "key": "e",
+                      "value": "{{DeviceID}}"
+                    },
+                    {
+                      "disabled": true,
+                      "key": "f",
+                      "value": "{{VivaVideo_Auid}}"
+                    },
+                    {
+                      "key": "h",
+                      "value": "{{VivaVideo_UserToken}}"
+                    },
+                    {
+                      "key": "i",
+                      "value": "{\"a\":\"{{thirdPuid}}\",\"b\":\"1\"}"
+                    },
+                    {
+                      "key": "j",
+                      "value": "{{signRequest}}"
+                    },
+                    {
+                      "key": "k",
+                      "value": "{{OSVersion}}"
+                    },
+                    {
+                      "key": "l",
+                      "value": "{{CurrentTime}}"
+                    }
+                  ]
+                },
+                "description": {
+                  "content": "",
+                  "type": "text/plain"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                      "",
+                      "if(responseCode.code === 200){",
+                      "    if(responseBody.length !== 0){",
+                      "        console.log(\"Response is： \" + responseBody);",
+                      "    }else{",
+                      "        console.log(\"The response is NULL!\");",
+                      "    }",
+                      "}else if(responseBody.has(\"errorCode\")){",
+                      "    //输出responseBody",
+                      "    console.log(responseBody);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                      "var reqData = _.indexBy(request.data, \"key\"),",
+                      "    iContent = reqData[\"i\"].value;",
+                      "",
+                      "if(iContent.length !== 0){",
+                      "    var jsonContent=JSON.parse(iContent);",
+                      "",
+                      "    for (var a in jsonContent)",
+                      "    {",
+                      "        jsonContent[a]=String([jsonContent[a]]);",
+                      "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                      "        {",
+                      "            var y1=jsonContent[a].indexOf(\"}\");",
+                      "            var y2=jsonContent[a].substring(2,y1);",
+                      "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                      "        }",
+                      "    }",
+                      "        var strContentSign=JSON.stringify(jsonContent);",
+                      "}else{",
+                      "    var strContentSign = \"\";",
+                      "}",
+                      "",
+                      "var aPath = \"\";",
+                      "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                      "if(reqData[\"a\"].value.length === 1){",
+                      "    aPath = reqData[\"a\"].value;",
+                      "}else{",
+                      "    aPath = reqData[\"a\"].value.slice(0,1);",
+                      "}",
+                      "//拼接生成strPath字符串",
+                      "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                      "",
+                      "//生成request中i对应的sign值，用于服务器校验",
+                      "//var strContentSign = request.data[\"i\"];",
+                      "var strTime = globals.CurrentTime;",
+                      "",
+                      "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                      "//将Appkey值转成salt值，并Base64加密",
+                      "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                      "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                      "",
+                      "//拼接字符串，并MD5加密",
+                      "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                      "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                      "//console.log(md5StrJ);",
+                      "",
+                      "//将加密后的sign值设置到环境变量",
+                      "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "_": {},
+              "id": "13db3f4b-8464-4050-85a8-c07baa06e8e3",
+              "name": "pb-添加评论",
+              "request": {
+                "url": "{{VivaVideoUrl_hz_p}}/pb",
+                "method": "POST",
+                "header": [
+                  {
+                    "description": {
+                      "content": "",
+                      "type": "text/plain"
+                    },
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "description": {
+                      "content": "",
+                      "type": "text/plain"
+                    },
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "a",
+                      "value": "pb"
+                    },
+                    {
+                      "key": "b",
+                      "value": "1.0"
+                    },
+                    {
+                      "key": "c",
+                      "value": "{{Appkey}}"
+                    },
+                    {
+                      "key": "d",
+                      "value": "VivaVideo_QaTest_Tony"
+                    },
+                    {
+                      "key": "e",
+                      "value": "{{DeviceID}}"
+                    },
+                    {
+                      "key": "f",
+                      "value": "{{VivaVideo_Auid}}"
+                    },
+                    {
+                      "key": "h",
+                      "value": "{{VivaVideo_UserToken}}"
+                    },
+                    {
+                      "key": "i",
+                      "value": "{\"a\":\"{{secPuid}}\",\"b\":\"1\",\"c\":\"{{VivaVideo_Auid}}\",\"d\":\"赞一个\"}"
+                    },
+                    {
+                      "key": "j",
+                      "value": "{{signRequest}}"
+                    },
+                    {
+                      "key": "k",
+                      "value": "{{OSVersion}}"
+                    },
+                    {
+                      "key": "l",
+                      "value": "{{CurrentTime}}"
+                    }
+                  ]
+                },
+                "description": {
+                  "content": "评论自己账号",
+                  "type": "text/plain"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                      "",
+                      "if(responseCode.code === 200){",
+                      "    if(responseBody.length !== 0){",
+                      "        var jsonData = JSON.parse(responseBody);",
+                      "        //将发布的评论id设置到环境strCommentID中",
+                      "        postman.setEnvironmentVariable(\"strCommentID\", jsonData.commentId);",
+                      "        console.log(\"Response is： \" + responseBody);",
+                      "    }else{",
+                      "        console.log(\"The response is NULL!\");",
+                      "    }",
+                      "}else if(responseBody.has(\"errorCode\")){",
+                      "    //输出responseBody",
+                      "    console.log(responseBody);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                      "var reqData = _.indexBy(request.data, \"key\"),",
+                      "    iContent = reqData[\"i\"].value;",
+                      "",
+                      "if(iContent.length !== 0){",
+                      "    var jsonContent=JSON.parse(iContent);",
+                      "",
+                      "    for (var a in jsonContent)",
+                      "    {",
+                      "        jsonContent[a]=String([jsonContent[a]]);",
+                      "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                      "        {",
+                      "            var y1=jsonContent[a].indexOf(\"}\");",
+                      "            var y2=jsonContent[a].substring(2,y1);",
+                      "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                      "        }",
+                      "    }",
+                      "        var strContentSign=JSON.stringify(jsonContent);",
+                      "}else{",
+                      "    var strContentSign = \"\";",
+                      "}",
+                      "",
+                      "var aPath = \"\";",
+                      "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                      "if(reqData[\"a\"].value.length === 1){",
+                      "    aPath = reqData[\"a\"].value;",
+                      "}else{",
+                      "    aPath = reqData[\"a\"].value.slice(0,1);",
+                      "}",
+                      "//拼接生成strPath字符串",
+                      "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                      "",
+                      "//生成request中i对应的sign值，用于服务器校验",
+                      "//var strContentSign = request.data[\"i\"];",
+                      "var strTime = globals.CurrentTime;",
+                      "",
+                      "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                      "//将Appkey值转成salt值，并Base64加密",
+                      "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                      "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                      "",
+                      "//拼接字符串，并MD5加密",
+                      "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                      "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                      "//console.log(md5StrJ);",
+                      "",
+                      "//将加密后的sign值设置到环境变量",
+                      "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "_": {},
+              "id": "f354aaa5-f06f-46af-a384-e53ffadbe65f",
+              "name": "pe-举报评论",
+              "request": {
+                "url": "{{VivaVideoUrl_hz_p}}/pe",
+                "method": "POST",
+                "header": [
+                  {
+                    "description": {
+                      "content": "",
+                      "type": "text/plain"
+                    },
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "description": {
+                      "content": "",
+                      "type": "text/plain"
+                    },
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "a",
+                      "value": "pe"
+                    },
+                    {
+                      "key": "b",
+                      "value": "1.0"
+                    },
+                    {
+                      "key": "c",
+                      "value": "{{Appkey}}"
+                    },
+                    {
+                      "key": "d",
+                      "value": "VivaVideo_QaTest_Tony"
+                    },
+                    {
+                      "key": "e",
+                      "value": "{{DeviceID}}"
+                    },
+                    {
+                      "key": "f",
+                      "value": "{{VivaVideo_Auid}}"
+                    },
+                    {
+                      "key": "h",
+                      "value": "{{VivaVideo_UserToken}}"
+                    },
+                    {
+                      "key": "i",
+                      "value": "{\"a\":\"{{strCommentID}}\"}"
+                    },
+                    {
+                      "key": "j",
+                      "value": "{{signRequest}}"
+                    },
+                    {
+                      "key": "k",
+                      "value": "{{OSVersion}}"
+                    },
+                    {
+                      "key": "l",
+                      "value": "{{CurrentTime}}"
+                    }
+                  ]
+                },
+                "description": {
+                  "content": "评论自己账号",
+                  "type": "text/plain"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                      "",
+                      "if(responseCode.code === 200){",
+                      "    if(responseBody.length !== 0){",
+                      "        var jsonData = JSON.parse(responseBody);",
+                      "        console.log(\"Response is： \" + responseBody);",
+                      "    }else{",
+                      "        console.log(\"The response is NULL!\");",
+                      "    }",
+                      "}else if(responseBody.has(\"errorCode\")){",
+                      "    //输出responseBody",
+                      "    console.log(responseBody);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                      "var reqData = _.indexBy(request.data, \"key\"),",
+                      "    iContent = reqData[\"i\"].value;",
+                      "",
+                      "if(iContent.length !== 0){",
+                      "    var jsonContent=JSON.parse(iContent);",
+                      "",
+                      "    for (var a in jsonContent)",
+                      "    {",
+                      "        jsonContent[a]=String([jsonContent[a]]);",
+                      "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                      "        {",
+                      "            var y1=jsonContent[a].indexOf(\"}\");",
+                      "            var y2=jsonContent[a].substring(2,y1);",
+                      "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                      "        }",
+                      "    }",
+                      "        var strContentSign=JSON.stringify(jsonContent);",
+                      "}else{",
+                      "    var strContentSign = \"\";",
+                      "}",
+                      "",
+                      "var aPath = \"\";",
+                      "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                      "if(reqData[\"a\"].value.length === 1){",
+                      "    aPath = reqData[\"a\"].value;",
+                      "}else{",
+                      "    aPath = reqData[\"a\"].value.slice(0,1);",
+                      "}",
+                      "//拼接生成strPath字符串",
+                      "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                      "",
+                      "//生成request中i对应的sign值，用于服务器校验",
+                      "//var strContentSign = request.data[\"i\"];",
+                      "var strTime = globals.CurrentTime;",
+                      "",
+                      "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                      "//将Appkey值转成salt值，并Base64加密",
+                      "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                      "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                      "",
+                      "//拼接字符串，并MD5加密",
+                      "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                      "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                      "//console.log(md5StrJ);",
+                      "",
+                      "//将加密后的sign值设置到环境变量",
+                      "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "_": {},
+              "id": "61105b17-9be4-4209-a7f5-b9eaebd33cd4",
+              "name": "pf-评论点赞/取消点赞",
+              "request": {
+                "url": "{{VivaVideoUrl_hz_p}}/pf",
+                "method": "POST",
+                "header": [
+                  {
+                    "description": {
+                      "content": "",
+                      "type": "text/plain"
+                    },
+                    "key": "Content-Type",
+                    "value": "application/x-www-form-urlencoded"
+                  },
+                  {
+                    "description": {
+                      "content": "",
+                      "type": "text/plain"
+                    },
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "a",
+                      "value": "pf"
+                    },
+                    {
+                      "key": "b",
+                      "value": "1.0"
+                    },
+                    {
+                      "key": "c",
+                      "value": "{{Appkey}}"
+                    },
+                    {
+                      "key": "d",
+                      "value": "VivaVideo_QaTest_Tony"
+                    },
+                    {
+                      "key": "e",
+                      "value": "{{DeviceID}}"
+                    },
+                    {
+                      "key": "f",
+                      "value": "{{VivaVideo_Auid}}"
+                    },
+                    {
+                      "key": "h",
+                      "value": "{{VivaVideo_UserToken}}"
+                    },
+                    {
+                      "key": "i",
+                      "value": "{\"a\":\"{{strCommentID}}\",\"b\":\"1\"}"
+                    },
+                    {
+                      "key": "j",
+                      "value": "{{signRequest}}"
+                    },
+                    {
+                      "key": "k",
+                      "value": "{{OSVersion}}"
+                    },
+                    {
+                      "key": "l",
+                      "value": "{{CurrentTime}}"
+                    }
+                  ]
+                },
+                "description": {
+                  "content": "评论自己账号\n业务参数说明：\nb：\n1：点赞\n0：取消点赞",
+                  "type": "text/plain"
+                }
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "tests[\"Status code is 200\"] = responseCode.code === 200;",
+                      "",
+                      "if(responseCode.code === 200){",
+                      "    if(responseBody.length !== 0){",
+                      "        var jsonData = JSON.parse(responseBody);",
+                      "        console.log(\"Response is： \" + responseBody);",
+                      "    }else{",
+                      "        console.log(\"The response is NULL!\");",
+                      "    }",
+                      "}else if(responseBody.has(\"errorCode\")){",
+                      "    //输出responseBody",
+                      "    console.log(responseBody);",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "//将业务请求参数i对应的动态参数取出，赋值给strContentSign",
+                      "var reqData = _.indexBy(request.data, \"key\"),",
+                      "    iContent = reqData[\"i\"].value;",
+                      "",
+                      "if(iContent.length !== 0){",
+                      "    var jsonContent=JSON.parse(iContent);",
+                      "",
+                      "    for (var a in jsonContent)",
+                      "    {",
+                      "        jsonContent[a]=String([jsonContent[a]]);",
+                      "        if(jsonContent[a].indexOf(\"{\")>=0)",
+                      "        {",
+                      "            var y1=jsonContent[a].indexOf(\"}\");",
+                      "            var y2=jsonContent[a].substring(2,y1);",
+                      "            jsonContent[a]=jsonContent[a].replace(jsonContent[a],environment[y2]);",
+                      "        }",
+                      "    }",
+                      "        var strContentSign=JSON.stringify(jsonContent);",
+                      "}else{",
+                      "    var strContentSign = \"\";",
+                      "}",
+                      "",
+                      "var aPath = \"\";",
+                      "//如果方法名为1位，则直接赋值；如果不等于一位，则截取第一位；",
+                      "if(reqData[\"a\"].value.length === 1){",
+                      "    aPath = reqData[\"a\"].value;",
+                      "}else{",
+                      "    aPath = reqData[\"a\"].value.slice(0,1);",
+                      "}",
+                      "//拼接生成strPath字符串",
+                      "var strPath = \"/api/rest/\" + aPath + \"/\" + reqData[\"a\"].value;",
+                      "",
+                      "//生成request中i对应的sign值，用于服务器校验",
+                      "//var strContentSign = request.data[\"i\"];",
+                      "var strTime = globals.CurrentTime;",
+                      "",
+                      "//var strAppkey = environment[\"Appkey\"];   //需要再将此字符串经过Base64加密",
+                      "//将Appkey值转成salt值，并Base64加密",
+                      "var salt = CryptoJS.enc.Utf8.parse(environment[\"Appkey\"]);",
+                      "var strSalt = CryptoJS.enc.Base64.stringify(salt);",
+                      "",
+                      "//拼接字符串，并MD5加密",
+                      "var strSign = \"POST\" + strPath + strContentSign + strTime + strSalt;",
+                      "var md5StrJ = CryptoJS.MD5(strSign).toString();",
+                      "//console.log(md5StrJ);",
+                      "",
+                      "//将加密后的sign值设置到环境变量",
+                      "postman.setEnvironmentVariable(\"signRequest\",md5StrJ);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "event": []
+        },
+        "cursor": {
+          "ref": "a7583467-f4c7-4ec5-b187-9d4b8463e74f",
+          "length": 7,
+          "cycles": 1,
+          "position": 1,
+          "iteration": 0
+        }
+      }
+    ],
+    "error": null
+  }
+}
